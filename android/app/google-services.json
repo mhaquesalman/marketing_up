@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "970930480772",
+    "project_id": "marketing-up-app",
+    "storage_bucket": "marketing-up-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:970930480772:android:89c9a46a906b221c8b44d1",
+        "android_client_info": {
+          "package_name": "com.hrsoftbd.marketingup.marketing_up"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjAcgow-4CQ79fpx6VA18WyF5B36OwPE0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
