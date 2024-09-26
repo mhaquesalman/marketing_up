@@ -41,8 +41,7 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
     email = emailController.text;
     password = passwordController.text;
     if (email.isNotEmpty && password.isNotEmpty) {
-      Map<String, dynamic>? userInfo =
-          await firebaseProvider.loginUser(email, password);
+      Map<String, dynamic>? userInfo = await firebaseProvider.loginUser(email, password);
       if (userInfo != null) {
         userModel = UserModel.fromMap(userInfo);
       }
@@ -182,7 +181,7 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10.0),
             ),
-            hintText: label == "password" ? "Password" : "Email",
+            hintText: label == "password" ? "Enter password" : "Enter email",
             prefixIcon:
                 label == "password" ? Icon(Icons.lock) : Icon(Icons.person),
             suffixIcon: label == "password"

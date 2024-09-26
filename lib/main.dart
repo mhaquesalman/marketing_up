@@ -7,8 +7,10 @@ import 'package:marketing_up/app_provider.dart';
 import 'package:marketing_up/firebase_provider.dart';
 import 'package:marketing_up/login_screen.dart';
 import 'package:marketing_up/login_screen_copy.dart';
+import 'package:marketing_up/screens/add_employee_screen.dart';
 import 'package:marketing_up/screens/register_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -16,14 +18,17 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform
   );
-  runApp(MyApp());
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  runApp(MyApp(sharedPreferences: prefs));
 }
 
 class MyApp extends StatelessWidget {
 
   final FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-  MyApp({super.key});
+  final SharedPreferences? sharedPreferences;
+
+  MyApp({super.key, this.sharedPreferences});
 
   // This widget is the root of your application.
   @override
@@ -31,7 +36,8 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppProvider()),
-        ChangeNotifierProvider(create: (_) => FirebaseProvider(firebaseFirestore: firebaseFirestore, firebaseAuth: firebaseAuth)),
+        ChangeNotifierProvider(create: (_) =>
+            FirebaseProvider(firebaseFirestore: firebaseFirestore, firebaseAuth: firebaseAuth, preferences: sharedPreferences!)),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -40,7 +46,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Color(int.parse("0xFFE35335"))),
           useMaterial3: true,
         ),
-        home: LoginScreenCopy(),
+        home: AddEmployeeScreen(),
       ),
     );
   }

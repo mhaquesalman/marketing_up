@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:marketing_up/app_provider.dart';
+import 'package:marketing_up/constants.dart';
 import 'package:marketing_up/drawer_widget.dart';
 import 'package:marketing_up/firebase_provider.dart';
 import 'package:marketing_up/login_screen_copy.dart';
 import 'package:marketing_up/models/user_model.dart';
+import 'package:marketing_up/screens/add_employee_screen.dart';
+import 'package:marketing_up/screens/register_screen.dart';
 import 'package:marketing_up/visitmodel.dart';
 import 'package:marketing_up/widgets/gradient_background.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +21,7 @@ class DashboardScreenCopy extends StatefulWidget {
 
 class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
 
+  late String userType = widget.userModel?.userType ?? "";
 
   @override
   void initState() {
@@ -36,7 +40,7 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
         actions: [
           IconButton(
               onPressed: () {
-                context.read<FirebaseProvider>().logout();
+                context.read<FirebaseProvider>().logout(userType);
                 Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (context) => LoginScreenCopy()),
                         (Route<dynamic> route) => false);
@@ -46,14 +50,18 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
         ],
       ),
       drawer: DrawerWidget(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+      floatingActionButton: userType == Constants.DefaultUserType ? FloatingActionButton(
+        onPressed: () {
+          Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => AddEmployeeScreen(userModel: widget.userModel,)
+          ));
+        },
         backgroundColor: Theme.of(context).primaryColor,
         child: Icon(
           Icons.add,
           color: Colors.white,
         ),
-      ),
+      ) : null,
       body: Column(
         children: [
           Text("${widget.userModel?.companyUserLimit}"),

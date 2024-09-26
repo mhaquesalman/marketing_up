@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:marketing_up/constants.dart';
 import 'package:marketing_up/firebase_provider.dart';
 import 'package:marketing_up/models/user_model.dart';
+import 'package:marketing_up/utils.dart';
 import 'package:marketing_up/widgets/appbar_widget.dart';
 import 'package:marketing_up/widgets/gradient_background.dart';
 import 'package:provider/provider.dart';
@@ -15,7 +16,8 @@ import 'package:provider/provider.dart';
 import '../imagepicker_widget.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+
+  RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -37,29 +39,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
   late FirebaseProvider firebaseProvider;
   UserModel? createdUserModel;
 
-  void showSnackbar(BuildContext context, String text) {
-    final snackBar = SnackBar(
-      content: Text(text),
-      duration: Duration(seconds: 3),
+
+  void showAlertDialog(String msg) {
+    showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (context) => AlertDialog(
+              title: Text("Use Drawer for navigation"),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      "OK",
+                      style: TextStyle(fontSize: 18),
+                    ))
+              ],)
     );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
-  String encryptPassword(String password) {
-    final bytes = utf8.encode(password);
-    final hash = sha256.convert(bytes);
-    return hash.toString();
-  }
-
-  Future<String> convertImageToBase64(File imageFile) async {
-    Uint8List imagebytes = await imageFile.readAsBytes(); //convert to bytes
-    String base64string =
-        base64.encode(imagebytes); //convert bytes to base64 string
-    // print(base64string);
-    return base64string;
-  }
-
-  Future<void> submitData() async {
+  void submitData() async {
     if (formKey.currentState!.validate()) {
       formKey.currentState!.save();
       if (fullname.isNotEmpty &&
@@ -67,10 +65,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           phone.isNotEmpty &&
           password.isNotEmpty) {
         if (image.isEmpty) {
-          showSnackbar(context, "must add an image");
+          Utils.showSnackbar(context, "must add an image");
         } else {
-          String convertImage = await convertImageToBase64(image[0]);
-          String securedPass = encryptPassword(password);
+          String convertImage = await Utils.convertImageToBase64(image[0]);
+          String securedPass = Utils.encryptPassword(password);
 
           UserModel userModel = UserModel(
               activeStatus: Constants.DefaultActiveStatus,
@@ -88,9 +86,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               updatedAt: DateTime.now()
           );
 
-          createdUserModel =
-              await firebaseProvider.registerUser(userModel, password);
-          print("createdUser: ${createdUserModel}");
+          createdUserModel = await firebaseProvider.registerUser(userModel, password);
+          // print("createdUser: ${createdUserModel}");
 
           if (createdUserModel != null) {
             formKey.currentState!.reset();
@@ -119,11 +116,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // to show snackbar we have to use inside addpostframecallback
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       if (status == Status.Success && createdUserModel != null) {
-        showSnackbar(context, responseMsg);
+        Utils.showSnackbar(context, responseMsg);
       } else if (status == Status.Fail) {
-        showSnackbar(context, responseMsg);
+        if (responseMsg.contains("9999"))
+          showAlertDialog(responseMsg);
+        else
+          Utils.showSnackbar(context, responseMsg);
       } else if (status == Status.Error) {
-        showSnackbar(context, responseMsg);
+        Utils.showSnackbar(context, responseMsg);
       }
     });
 
@@ -162,7 +162,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
-        ));
+        )
+    );
   }
 
   Widget buildRegisterButton(BuildContext context, Status status) {
@@ -244,7 +245,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               return null;
           }
 
-          if (label == "Phone") {
+          if (label == "phone") {
             if (input!.trim().length < 10)
               return errMsg;
             else

@@ -20,9 +20,16 @@ class Constants {
 
   // default values
   static const DefaultActiveStatus = false;
+  static const DefaultActiveStatusForEmployee = true;
   static const DefaultCompanyId = "0";
   static const DefaultCreatedBy = "rzroky";
   static const DefaultCompanyVisitLimit = "100";
   static const DefaultCompanyUserLimit = "5";
   static const DefaultUserType = "admin";
+  static const DefaultEmployeeType = "employee";
+
+  // Shared preferences values for employee
+  static const SharedPrefEmployeeId = "pref_employee_id";
+  static const SharedPrefEmployeeType = "pref_employee_Type";
+  static const SharedPrefEmployeeLoginExpired = "pref_employee_login_expired";
 }
