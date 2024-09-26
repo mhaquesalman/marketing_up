@@ -88,7 +88,9 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
               onPressed: () {
                 handleImage();
               },
-              child: Text("Add Photo")),
+              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
+              child: Text("Add Photo", style: TextStyle(color: Colors.white),)
+          ),
         ),
         Container(
           height: 150,
@@ -114,7 +116,9 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                       });
                       widget.savedImages(myImageFile);
                     },
-                    child: Text("clear")),
+                    style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
+                    child: Text("Clear", style: TextStyle(color: Colors.white),)
+                ),
               )
             : Text("")
       ],

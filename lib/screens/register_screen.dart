@@ -4,9 +4,12 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:marketing_up/constants.dart';
 import 'package:marketing_up/firebase_provider.dart';
 import 'package:marketing_up/models/user_model.dart';
+import 'package:marketing_up/widgets/appbar_widget.dart';
+import 'package:marketing_up/widgets/gradient_background.dart';
 import 'package:provider/provider.dart';
 
 import '../imagepicker_widget.dart';
@@ -25,7 +28,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   FocusNode phoneFocusNode = FocusNode();
   FocusNode passwordFocusNode = FocusNode();
   bool isObscured = true;
-  bool canPickAgain = false;
   bool clearImagePicker = false;
   String email = "";
   String fullname = "";
@@ -33,6 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String password = "";
   List<File> image = [];
   late FirebaseProvider firebaseProvider;
+  UserModel? createdUserModel;
 
   void showSnackbar(BuildContext context, String text) {
     final snackBar = SnackBar(
@@ -82,9 +85,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               userPhoto: convertImage,
               userType: Constants.DefaultUserType,
               createdAt: DateTime.now(),
-              updatedAt: DateTime.now());
+              updatedAt: DateTime.now()
+          );
 
-          final createdUserModel =
+          createdUserModel =
               await firebaseProvider.registerUser(userModel, password);
           print("createdUser: ${createdUserModel}");
 
@@ -92,7 +96,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             formKey.currentState!.reset();
             setState(() {
               clearImagePicker = true;
-              canPickAgain = true;
             });
           }
         }
@@ -110,24 +113,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     Status status = context.watch<FirebaseProvider>().status;
-    print("status: $status");
+    String responseMsg = Provider.of<FirebaseProvider>(context).responseMsg;
+    // print("status: $status");
 
     // to show snackbar we have to use inside addpostframecallback
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (status == Status.Success) {
-        showSnackbar(context, "Registration Successful");
+      if (status == Status.Success && createdUserModel != null) {
+        showSnackbar(context, responseMsg);
       } else if (status == Status.Fail) {
-        showSnackbar(context, "User already exist");
+        showSnackbar(context, responseMsg);
       } else if (status == Status.Error) {
-        showSnackbar(context, "Something wrong");
+        showSnackbar(context, responseMsg);
       }
     });
 
     return Scaffold(
-        appBar: AppBar(
-          title: Text("Marketing Up"),
-          backgroundColor: Theme.of(context).primaryColor,
-        ),
+        appBar: appBarWidget(context),
         body: Form(
           key: formKey,
           child: SingleChildScrollView(
@@ -170,7 +171,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       height: 60.0,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
+        gradient: gradientBackground(),
         borderRadius: BorderRadius.circular(20.0),
       ),
       child: TextButton(
@@ -179,6 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           style: TextStyle(
             color: Colors.white,
             fontSize: 20.0,
+            fontFamily: GoogleFonts.poppins().fontFamily
           ),
         ),
         onPressed: () {

@@ -16,6 +16,7 @@ class Constants {
   static const FirebaseUpdatedAt = "updated_at";
   static const FirebaseUserPhoto = "user_photo";
   static const FirebaseUserType = "user_type";
+  static const FirebaseToken = "token";
 
   // default values
   static const DefaultActiveStatus = false;

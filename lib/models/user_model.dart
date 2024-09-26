@@ -16,6 +16,7 @@ class UserModel {
   final String userType;
   final DateTime createdAt;
   final DateTime updatedAt;
+  String? token;
 
   UserModel(
       {this.id,
@@ -32,6 +33,23 @@ class UserModel {
       required this.userType,
       required this.createdAt,
       required this.updatedAt});
+
+  UserModel.withToken(
+      {this.id, this.token,
+        required this.activeStatus,
+        required this.companyUserLimit,
+        required this.companyId,
+        required this.companyVisitLimit,
+        required this.createdBy,
+        required this.email,
+        required this.fullName,
+        required this.phoneNumber,
+        required this.password,
+        required this.userPhoto,
+        required this.userType,
+        required this.createdAt,
+        required this.updatedAt});
+
 
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{};
@@ -66,8 +84,29 @@ class UserModel {
         password: doc.get(Constants.FirebasePassword),
         userPhoto: doc.get(Constants.FirebaseUserPhoto),
         userType: doc.get(Constants.FirebaseUserType),
-        createdAt: doc.get(Constants.FirebaseCreatedAt),
-        updatedAt: doc.get(Constants.FirebaseUpdatedAt));
+        createdAt: (doc.get(Constants.FirebaseCreatedAt) as Timestamp).toDate(),
+        updatedAt: (doc.get(Constants.FirebaseUpdatedAt) as Timestamp).toDate()
+    );
+  }
+
+  factory UserModel.fromMap(Map<String, dynamic> map) {
+    return UserModel.withToken(
+        id: map[Constants.FirebaseUserId],
+        token: map[Constants.FirebaseToken],
+        activeStatus: map[Constants.FirebaseActiveStatus],
+        companyUserLimit: map[Constants.FirebaseCompanyUserLimit],
+        companyId: map[Constants.FirebaseCompanyId],
+        companyVisitLimit: map[Constants.FirebaseCompanyVisitLimit],
+        createdBy: map[Constants.FirebaseCreatedBy],
+        email: map[Constants.FirebaseEmail],
+        fullName: map[Constants.FirebaseFullName],
+        phoneNumber: map[Constants.FirebasePhoneNumber],
+        password: map[Constants.FirebasePassword],
+        userPhoto: map[Constants.FirebaseUserPhoto],
+        userType: map[Constants.FirebaseUserType],
+        createdAt: (map[Constants.FirebaseCreatedAt] as Timestamp).toDate(),
+        updatedAt: (map[Constants.FirebaseUpdatedAt] as Timestamp).toDate()
+    );
   }
 
   UserModel copyWith(
@@ -104,6 +143,8 @@ class UserModel {
 
   @override
   String toString() {
-    return 'UserModel{activeStatus: $activeStatus, companyUserLimit: $companyUserLimit, companyId: $companyId, companyVisitLimit: $companyVisitLimit, createdBy: $createdBy, email: $email, fullName: $fullName, phoneNumber: $phoneNumber, userType: $userType, createdAt: $createdAt, updatedAt: $updatedAt}';
+    return 'UserModel{id: $id, activeStatus: $activeStatus, companyUserLimit: $companyUserLimit, companyId: $companyId, companyVisitLimit: $companyVisitLimit, '
+        'createdBy: $createdBy, email: $email, fullName: $fullName, phoneNumber: $phoneNumber, userType: $userType, createdAt: $createdAt, '
+        'updatedAt: $updatedAt, token: $token}';
   }
 }
