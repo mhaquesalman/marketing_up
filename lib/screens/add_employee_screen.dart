@@ -28,15 +28,22 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
   FocusNode emailFocusNode = FocusNode();
   FocusNode phoneFocusNode = FocusNode();
   FocusNode passwordFocusNode = FocusNode();
+  FocusNode activeStatusFocusNode = FocusNode();
+  TextEditingController activeController = TextEditingController();
   bool isObscured = true;
   bool clearImagePicker = false;
   String email = "";
   String fullname = "";
   String phone = "";
   String password = "";
-  String activeStatus = "";
+  String? activeStatus;
+  String? activeStatus2;
   var selectedActiveItem;
-  List activeLabelList = ["YES", "NO"];
+  List<String> activeLabelList = ["YES", "NO"];
+  List activeLabelList2 = [
+    {"label": "YES", "value": true},
+    {"label": "NO", "value": false}
+  ];
   List<File> image = [];
   List<DropdownMenuItem<Object?>> dropDownItems = [];
   late FirebaseProvider firebaseProvider;
@@ -90,7 +97,7 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
   @override
   void initState() {
     firebaseProvider = Provider.of<FirebaseProvider>(context, listen: false);
-    dropDownItems = buildDropdownTestItems(activeLabelList);
+    // dropDownItems = buildDropdownTestItems(activeLabelList);
     super.initState();
   }
 
@@ -142,6 +149,8 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                 //   ],
                 // ),
                 buildDropDownMenu(),
+                buildTextFieldForPopUpMenu("Active", "", activeStatusFocusNode),
+                // buildPopUpMenu(),
                 buildRegisterButton(context, status),
                 ImagePickerWidget(
                   clearImage: clearImagePicker,
@@ -161,36 +170,50 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
 
   Widget buildDropDownMenu() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 10),
-      child: DropdownButtonFormField(
-        key: dropDownFormKey,
-        itemHeight: null,
-        items: activeLabelList.map((item) =>
-            DropdownMenuItem<String>(
-                value: item,
-                child: Text(item, style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 16
-                ),)
-            )).toList(),
-        icon: Icon(Icons.arrow_drop_down),
-        isDense: true,
-        iconSize: 20,
-        decoration: InputDecoration(
-          labelText: "Employee Status",
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.0),
+      padding: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+        child: DropdownButtonFormField(
+          key: dropDownFormKey,
+          items: activeLabelList.map((item) =>
+              DropdownMenuItem(
+                  value: item,
+                  child: Text(item, style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16
+                  ),)
+              )).toList(),
+          icon: Icon(Icons.arrow_drop_down_circle),
+          decoration: InputDecoration(
+            labelText: "employee active",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
           ),
+          value: activeStatus,
+          validator: (input) => activeStatus == null ? "Please select status" : null,
+          onChanged: (value) {
+            setState(() {
+              activeStatus = value!;
+            });
+          },
         ),
-        value: activeStatus,
-        validator: (input) =>
-        activeStatus == "" ? "Please select active status" : null,
-        onChanged: (value) {
-          setState(() {
-            activeStatus = value ?? "";
-          });
+    );
+  }
+
+  Widget buildPopUpMenu() {
+    return PopupMenuButton(
+      icon: Icon(Icons.arrow_downward),
+      offset: Offset(0, 40),
+        itemBuilder: (context) {
+          return activeLabelList2.map((item) =>
+              PopupMenuItem(value: item['value'],
+                  child: Text(item['label'])
+              ),
+          ).toList();
         },
-      ),
+      onSelected: (value) {
+          selectedActiveItem = value;
+          activeController.text = selectedActiveItem['label'];
+      },
     );
   }
 
@@ -304,6 +327,31 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
     );
   }
 
+  Widget buildTextFieldForPopUpMenu(String label, String errMsg, FocusNode focusNode) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 10),
+      child: TextFormField(
+        controller: activeController,
+        readOnly: true,
+        onTap: () {
+          buildPopUpMenu();
+        },
+        decoration: InputDecoration(
+            labelText: label,
+            labelStyle: TextStyle(fontSize: 18.0),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            suffixIcon: buildPopUpMenu(),
+        ),
+        validator: (input) => activeStatus2 == null ? "Please select active status" : null,
+        onSaved: (value) {
+          activeStatus2 = activeController.text;
+        },
+      ),
+    );
+  }
+
   Widget buildCustomDropDownMenu() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -346,20 +394,20 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
   }
 
 
-  List<DropdownMenuItem<Object?>> buildDropdownTestItems(List activeLabelList) {
-    List<DropdownMenuItem<Object?>> items = [];
-    for (var i in activeLabelList) {
-      items.add(
-        DropdownMenuItem(
-          value: i,
-          child: Text(
-            i['label'],
-            style: TextStyle(color: Colors.black),
-          ),
-        ),
-      );
-    }
-    return items;
-  }
+  // List<DropdownMenuItem<Object?>> buildDropdownTestItems(List activeLabelList) {
+  //   List<DropdownMenuItem<Object?>> items = [];
+  //   for (var i in activeLabelList) {
+  //     items.add(
+  //       DropdownMenuItem(
+  //         value: i,
+  //         child: Text(
+  //           i['label'],
+  //           style: TextStyle(color: Colors.black),
+  //         ),
+  //       ),
+  //     );
+  //   }
+  //   return items;
+  // }
 }
 

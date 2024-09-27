@@ -144,16 +144,27 @@ class FirebaseProvider with ChangeNotifier {
           if (userType == Constants.DefaultEmployeeType) {
             String encryptPass = Utils.encryptPassword(plainPassword);
             if (encryptPass == userModel.password) {
-              DateTime loginWillExpire = DateTime.now().add(const Duration(days: 30));
-              await preferences.setString(Constants.SharedPrefEmployeeId, userModel.id!);
-              await preferences.setString(Constants.SharedPrefEmployeeLoginExpired, loginWillExpire.toIso8601String());
+              if (userModel.activeStatus) {
+                DateTime loginWillExpire = DateTime.now().add(
+                    const Duration(days: 30));
+                await preferences.setString(
+                    Constants.SharedPrefEmployeeId, userModel.id!);
+                await preferences.setString(
+                    Constants.SharedPrefEmployeeLoginExpired,
+                    loginWillExpire.toIso8601String());
 
-              Map<String, dynamic> mapUserModel = userModel.toMap();
-              Map<String, dynamic> userModelWithCredential = {...mapUserModel, Constants.FirebaseToken: ""};
-              responseMsg = "Successfully logged in by employee";
-              _status = Status.Success;
-              notifyListeners();
-              return userModelWithCredential;
+                Map<String, dynamic> mapUserModel = userModel.toMap();
+                Map<String, dynamic> userModelWithCredential = {...mapUserModel, Constants.FirebaseToken: ""};
+                responseMsg = "Successfully logged in by employee";
+                _status = Status.Success;
+                notifyListeners();
+                return userModelWithCredential;
+              } else {
+                responseMsg = "Account is not active contact with your admin";
+                _status = Status.Fail;
+                notifyListeners();
+                return null;
+              }
             } else {
               responseMsg = "Email and password doesn't match";
               _status = Status.Fail;
