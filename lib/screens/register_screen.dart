@@ -45,7 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         barrierDismissible: false,
         context: context,
         builder: (context) => AlertDialog(
-              title: Text("Use Drawer for navigation"),
+              title: Text(msg),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(context),
@@ -103,7 +103,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     firebaseProvider = context.read<FirebaseProvider>();
-
     super.initState();
   }
 
@@ -117,6 +116,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       if (status == Status.Success && createdUserModel != null) {
         Utils.showSnackbar(context, responseMsg);
+        firebaseProvider.resetStatus();
       } else if (status == Status.Fail) {
         if (responseMsg.contains("9999"))
           showAlertDialog(responseMsg);

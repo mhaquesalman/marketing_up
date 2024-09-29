@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:marketing_up/add_visit_screen.dart';
 import 'package:marketing_up/app_provider.dart';
 import 'package:marketing_up/dashboard_screen.dart';
+import 'package:marketing_up/firebase_provider.dart';
 import 'package:marketing_up/location_screen.dart';
 import 'package:marketing_up/login_screen.dart';
+import 'package:marketing_up/models/user_model.dart';
+import 'package:marketing_up/screens/add_visit_screen_copy.dart';
 import 'package:marketing_up/visit_list_screen.dart';
 import 'package:marketing_up/webview_screen.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +25,9 @@ enum CurrentPage {
 }
 
 class DrawerWidget extends StatefulWidget {
-  DrawerWidget({super.key,});
+  UserModel? userModel;
+
+  DrawerWidget({super.key, this.userModel});
 
   @override
   State<DrawerWidget> createState() => _DrawerWidgetState();
@@ -36,8 +41,9 @@ class _DrawerWidgetState extends State<DrawerWidget> {
     switch (screen) {
       case "add": {
         context.read<AppProvider>().setCurrentPage(CurrentPage.AddVisitScreen);
+        context.read<FirebaseProvider>().resetStatus();
         Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => AddVisitScreen())
+            MaterialPageRoute(builder: (context) => AddVisitScreenCopy(userModel: widget.userModel,))
         );
         break;
       }

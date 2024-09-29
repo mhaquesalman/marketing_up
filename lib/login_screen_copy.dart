@@ -4,6 +4,7 @@ import 'package:marketing_up/firebase_provider.dart';
 import 'package:marketing_up/models/user_model.dart';
 import 'package:marketing_up/screens/dashboard_screen_copy.dart';
 import 'package:marketing_up/screens/register_screen.dart';
+import 'package:marketing_up/utils.dart';
 import 'package:marketing_up/widgets/appbar_widget.dart';
 import 'package:marketing_up/widgets/gradient_background.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +29,23 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
   bool fieldsError = false;
   bool retry = false;
   late FirebaseProvider firebaseProvider;
+
+  void showAlertDialog(String msg) {
+    showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(msg),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  "OK",
+                  style: TextStyle(fontSize: 18),
+                ))
+          ],)
+    );
+  }
 
   void showSnackbar(BuildContext context, String text) {
     final snackBar = SnackBar(
@@ -77,15 +95,19 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
     Status status = context.watch<FirebaseProvider>().status;
     String responseMsg = Provider.of<FirebaseProvider>(context).responseMsg;
 
-    print("login: $status");
+    // print("login: $status");
 
     // to show snackbar we have to use inside addpostframecallback
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       if (status == Status.Success && userModel != null) {
         // showSnackbar(context, responseMsg);
+        firebaseProvider.resetStatus();
         goDashboard();
       } else if (status == Status.Fail && !retry) {
-        showSnackbar(context, responseMsg);
+        if (responseMsg.contains("9999") || responseMsg.contains("admin"))
+          showAlertDialog(responseMsg);
+        else
+          Utils.showSnackbar(context, responseMsg);
       } else if (status == Status.Error && !retry) {
         showSnackbar(context, responseMsg);
       }
@@ -174,6 +196,9 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
         controller: controller,
         obscureText: label == "password" ? isObscured : false,
         style: TextStyle(fontSize: 16.0),
+        keyboardType: label == "email"
+            ? TextInputType.emailAddress
+            : null,
         decoration: InputDecoration(
             labelText: label,
             errorText: fieldsError ? "Fields can't be empty" : null,

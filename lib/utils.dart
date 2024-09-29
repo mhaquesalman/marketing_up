@@ -6,10 +6,10 @@ import 'package:crypto/crypto.dart';
 
 class Utils {
 
-  static void showSnackbar(BuildContext context, String text) {
+  static void showSnackbar(BuildContext context, String text, {int duration = 3}) {
     final snackBar = SnackBar(
       content: Text(text),
-      duration: Duration(seconds: 3),
+      duration: Duration(seconds: duration),
     );
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }

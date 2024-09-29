@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:marketing_up/constants.dart';
 import 'package:marketing_up/models/user_model.dart';
+import 'package:marketing_up/models/visit_model.dart';
 import 'package:marketing_up/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,6 +14,11 @@ class FirebaseProvider with ChangeNotifier {
   Status _status = Status.Initial;
 
   Status get status => _status;
+
+  void resetStatus() {
+    _status = Status.Initial;
+  }
+
   String responseMsg = "";
 
   FirebaseFirestore firebaseFirestore;
@@ -53,7 +59,7 @@ class FirebaseProvider with ChangeNotifier {
       CollectionReference userRef = firebaseFirestore.collection(Constants.FirebaseUserCollection);
 
       if (userModel.userType == Constants.DefaultEmployeeType) {
-        QuerySnapshot snapshots = await userRef.where('email', isEqualTo: userModel.email).get();
+        QuerySnapshot snapshots = await userRef.where(Constants.FirebaseEmail, isEqualTo: userModel.email).get();
         List<DocumentSnapshot> documents = snapshots.docs;
         if (documents.length == 1) {
           _status = Status.Fail;
@@ -64,7 +70,7 @@ class FirebaseProvider with ChangeNotifier {
           String userRefDocId = DateTime.now().microsecondsSinceEpoch.toString();
           // print("credential: ${userCredential.user!.uid}");
           UserModel userModelWithId = userModel.copyWith(id: userRefDocId);
-          userRef.doc(userRefDocId).set(userModelWithId.toMap());
+          await userRef.doc(userRefDocId).set(userModelWithId.toMap());
           responseMsg = "Employee registration is completed";
           _status = Status.Success;
           notifyListeners();
@@ -75,7 +81,7 @@ class FirebaseProvider with ChangeNotifier {
         String userRefDocId = userCredential.user != null ? userCredential.user!.uid : DateTime.now().microsecondsSinceEpoch.toString();
         // print("credential: ${userCredential.user!.uid}");
         UserModel userModelWithId = userModel.copyWith(id: userRefDocId);
-        userRef.doc(userRefDocId).set(userModelWithId.toMap());
+        await userRef.doc(userRefDocId).set(userModelWithId.toMap());
         responseMsg = "Registration is completed successfully";
         _status = Status.Success;
         notifyListeners();
@@ -102,9 +108,6 @@ class FirebaseProvider with ChangeNotifier {
         notifyListeners();
         return null;
       }
-    } finally {
-      _status = Status.Initial;
-      responseMsg = "";
     }
   }
 
@@ -116,7 +119,7 @@ class FirebaseProvider with ChangeNotifier {
       // DocumentSnapshot documentSnapshot = await userRef.doc(userModel.id).get();
 
       CollectionReference userRef = firebaseFirestore.collection(Constants.FirebaseUserCollection);
-      QuerySnapshot snapshots = await userRef.where('email', isEqualTo: email).get();
+      QuerySnapshot snapshots = await userRef.where(Constants.FirebaseEmail, isEqualTo: email).get();
       List<DocumentSnapshot> documents = snapshots.docs;
 
       if (documents.length == 1) {
@@ -129,7 +132,7 @@ class FirebaseProvider with ChangeNotifier {
           UserCredential userCredential = await firebaseAuth
               .signInWithEmailAndPassword(email: userModel.email, password: plainPassword);
           String idToken = await userCredential.user?.getIdToken() ?? "";
-          // print("user login info: ${userCredential.user}");
+          print("user login info: ${userCredential.user}");
           // print("user login token: $idToken");
           Map<String, dynamic> mapUserModel = userModel.toMap();
           if (userCredential.user != null) {
@@ -145,13 +148,13 @@ class FirebaseProvider with ChangeNotifier {
             String encryptPass = Utils.encryptPassword(plainPassword);
             if (encryptPass == userModel.password) {
               if (userModel.activeStatus) {
-                DateTime loginWillExpire = DateTime.now().add(
-                    const Duration(days: 30));
-                await preferences.setString(
-                    Constants.SharedPrefEmployeeId, userModel.id!);
-                await preferences.setString(
-                    Constants.SharedPrefEmployeeLoginExpired,
-                    loginWillExpire.toIso8601String());
+                // DateTime loginWillExpire = DateTime.now().add(
+                //     const Duration(days: 30));
+                // await preferences.setString(
+                //     Constants.SharedPrefEmployeeId, userModel.id!);
+                // await preferences.setString(
+                //     Constants.SharedPrefEmployeeLoginExpired,
+                //     loginWillExpire.toIso8601String());
 
                 Map<String, dynamic> mapUserModel = userModel.toMap();
                 Map<String, dynamic> userModelWithCredential = {...mapUserModel, Constants.FirebaseToken: ""};
@@ -203,9 +206,98 @@ class FirebaseProvider with ChangeNotifier {
         notifyListeners();
         return null;
       }
-    } finally {
-      _status = Status.Initial;
-      responseMsg = "";
+    }
+  }
+
+  Future<List<UserModel>?> getUsersByCreatedBy(String createdBy) async {
+    _status = Status.Loading;
+    notifyListeners();
+    try {
+      CollectionReference userRef = firebaseFirestore.collection(Constants.FirebaseUserCollection);
+      QuerySnapshot snapshots = await userRef
+          .where(Constants.FirebaseCreatedBy, isEqualTo: createdBy)
+          .orderBy(Constants.FirebaseCreatedAt, descending: true).get();
+      print("snapshots: ${snapshots.docs.length}");
+      List<DocumentSnapshot> documents = snapshots.docs;
+      List<UserModel> employees = [];
+      if (documents.isNotEmpty) {
+        documents.forEach((DocumentSnapshot documentSnapshot) {
+          UserModel userModelOfEmployee = UserModel.from(documentSnapshot);
+          employees.add(userModelOfEmployee);
+        });
+        responseMsg = "Employees loaded successfully";
+        _status = Status.Success;
+        notifyListeners();
+        return employees;
+      } else {
+        responseMsg = "No employee available for this admin";
+        _status = Status.Fail;
+        notifyListeners();
+        return employees;
+      }
+    } catch(err) {
+      print("loadUsers Error: ${err.toString()}");
+      responseMsg = "Something Wrong in fetching";
+      _status = Status.Error;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<UserModel?> updateEmployee(UserModel userModel) async {
+    _status = Status.Loading;
+    notifyListeners();
+    try {
+      CollectionReference userRef = firebaseFirestore.collection(Constants.FirebaseUserCollection);
+      final result = await userRef.doc(userModel.id).update(userModel.toMap());
+      _status = Status.Success;
+      responseMsg = "Information updated successfully";
+      notifyListeners();
+      return userModel;
+    } catch (err) {
+      print("update err: ${err.toString()}");
+      _status = Status.Error;
+      responseMsg = "Update failed!";
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<void> deleteEmployee(String userId) async {
+    _status = Status.Loading;
+    notifyListeners();
+    try {
+      CollectionReference userRef = firebaseFirestore.collection(Constants.FirebaseUserCollection);
+      final result = await userRef.doc(userId).delete();
+      _status = Status.Success;
+      responseMsg = "Employee deleted successfully";
+      notifyListeners();
+    } catch(err) {
+      print("delete err: ${err.toString()}");
+      _status = Status.Error;
+      responseMsg = "Delete failed!";
+      notifyListeners();
+    }
+  }
+
+  Future<VisitModel?> insertVisit(VisitModel visitModel) async {
+    _status = Status.Loading;
+    notifyListeners();
+    try {
+      CollectionReference visitRef = firebaseFirestore.collection(Constants.FirebaseVisitCollection);
+      String visitRefId = visitRef.doc().id;
+      VisitModel visitModelWithId = visitModel.copyWith(id: visitRefId);
+      await visitRef.doc(visitRefId).set(visitModelWithId.toMap());
+      responseMsg = "New visit has been added";
+      _status = Status.Success;
+      notifyListeners();
+      return visitModelWithId;
+    } catch (err) {
+      print("insert visit err: ${err.toString()}");
+      responseMsg = "Error while creating";
+      _status = Status.Error;
+      notifyListeners();
+      return null;
     }
   }
 
@@ -216,4 +308,5 @@ class FirebaseProvider with ChangeNotifier {
       await preferences.clear();
     }
   }
+
 }

@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Color(int.parse("0xFFE35335"))),
           useMaterial3: true,
         ),
-        home: AddEmployeeScreen(),
+        home: LoginScreenCopy(),
       ),
     );
   }

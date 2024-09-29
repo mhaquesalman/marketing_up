@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -7,12 +8,15 @@ import 'package:image_picker/image_picker.dart';
 class ImagePickerWidget extends StatefulWidget {
   bool clearImage;
   bool singleImage;
+  bool? isEdit = false;
+  List<String>? imageFromFirestore = [];
   Function(List<File>) savedImages;
 
   ImagePickerWidget(
       {required this.savedImages,
       required this.clearImage,
-      required this.singleImage});
+      required this.singleImage,
+        this.isEdit, this.imageFromFirestore});
 
   @override
   State<ImagePickerWidget> createState() => _ImagePickerWidgetState();
@@ -25,6 +29,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
 
   Future<void> handleImage() async {
     if (widget.singleImage && myImageFile.length == 1) return;
+    if (!widget.singleImage && myImageFile.length == 4) return;
     showModalBottomSheet(
             context: context,
             builder: (context) {
@@ -71,27 +76,38 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
   }
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     // print("image picker: ${widget.clearImage}");
     if (widget.clearImage) {
-      myImageFile.clear();
+      if (myImageFile.isNotEmpty)
+        myImageFile.clear();
+      if(widget.imageFromFirestore != null && widget.imageFromFirestore!.isNotEmpty)
+        widget.imageFromFirestore!.clear();
       widget.clearImage = false;
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 150,
           height: 50,
           child: ElevatedButton(
               onPressed: () {
+                if (widget.isEdit == true)
+                  widget.imageFromFirestore!.clear();
                 handleImage();
               },
               style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
-              child: Text("Add Photo", style: TextStyle(color: Colors.white),)
+              child: Text(widget.imageFromFirestore!.isNotEmpty ? "Change Photo" : "Add Photo",
+                style: TextStyle(color: Colors.white),)
           ),
         ),
+        myImageFile.isNotEmpty ?
         Container(
           height: 150,
           child: ListView(
@@ -104,7 +120,20 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                 )
             ],
           ),
-        ),
+        ) : widget.imageFromFirestore!.isNotEmpty ?
+        Container(
+          height: 150,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              for (index = 0; index < widget.imageFromFirestore!.length; index++)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Image.memory(base64Decode(widget.imageFromFirestore![index])),
+                )
+            ],
+          ),
+        ) : SizedBox.shrink(),
         myImageFile.isNotEmpty
             ? Container(
                 width: 150,
@@ -119,8 +148,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                     style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
                     child: Text("Clear", style: TextStyle(color: Colors.white),)
                 ),
-              )
-            : Text("")
+              ) : Text(""),
       ],
     );
   }

@@ -72,7 +72,7 @@ class UserModel {
 
   factory UserModel.from(DocumentSnapshot doc) {
     return UserModel(
-        id: doc.get(Constants.FirebaseUserId),
+        id: doc.get(Constants.FirebaseUserId) ?? "",
         activeStatus: doc.get(Constants.FirebaseActiveStatus),
         companyUserLimit: doc.get(Constants.FirebaseCompanyUserLimit),
         companyId: doc.get(Constants.FirebaseCompanyId),

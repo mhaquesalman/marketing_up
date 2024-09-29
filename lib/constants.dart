@@ -1,8 +1,7 @@
 class Constants {
-
   // users collection
   static const FirebaseUserCollection = "users";
-  static const FirebaseUserId= "id";
+  static const FirebaseUserId = "id";
   static const FirebaseActiveStatus = "active_status";
   static const FirebaseCompanyUserLimit = "company_user_limit";
   static const FirebaseCompanyId = "company_id";
@@ -32,4 +31,20 @@ class Constants {
   static const SharedPrefEmployeeId = "pref_employee_id";
   static const SharedPrefEmployeeType = "pref_employee_Type";
   static const SharedPrefEmployeeLoginExpired = "pref_employee_login_expired";
+
+  // visits collection
+  static const FirebaseVisitCollection = "visits";
+  static const FirebaseVisitId = "id";
+  static const FirebaseVisitCompanyName = "company_name";
+  static const FirebaseVisitCompanyId = "company_id";
+  static const FirebaseVisitContactEmail = "contact_email";
+  static const FirebaseVisitContactNumber = "contact_number";
+  static const FirebaseVisitCreatedBy = "created_by";
+  static const FirebaseVisitCreatedTime = "created_time";
+  static const FirebaseVisitNextVisitDate = "next_visit_date";
+  static const FirebaseVisitNextVisitPurpose = "next_visit_purpose";
+  static const FirebaseVisitPhotos = "photos";
+  static const FirebaseVisitPosition = "position";
+  static const FirebaseVisitDate = "visit_date";
+  static const FirebaseVisitPerson = "visiting_person";
 }
