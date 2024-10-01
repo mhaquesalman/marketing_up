@@ -217,7 +217,7 @@ class FirebaseProvider with ChangeNotifier {
       QuerySnapshot snapshots = await userRef
           .where(Constants.FirebaseCreatedBy, isEqualTo: createdBy)
           .orderBy(Constants.FirebaseCreatedAt, descending: true).get();
-      print("snapshots: ${snapshots.docs.length}");
+      print("users snapshots: ${snapshots.docs.length}");
       List<DocumentSnapshot> documents = snapshots.docs;
       List<UserModel> employees = [];
       if (documents.isNotEmpty) {
@@ -249,13 +249,13 @@ class FirebaseProvider with ChangeNotifier {
     notifyListeners();
     try {
       CollectionReference userRef = firebaseFirestore.collection(Constants.FirebaseUserCollection);
-      final result = await userRef.doc(userModel.id).update(userModel.toMap());
+      await userRef.doc(userModel.id).update(userModel.toMap());
       _status = Status.Success;
       responseMsg = "Information updated successfully";
       notifyListeners();
       return userModel;
     } catch (err) {
-      print("update err: ${err.toString()}");
+      print("employee update err: ${err.toString()}");
       _status = Status.Error;
       responseMsg = "Update failed!";
       notifyListeners();
@@ -268,12 +268,12 @@ class FirebaseProvider with ChangeNotifier {
     notifyListeners();
     try {
       CollectionReference userRef = firebaseFirestore.collection(Constants.FirebaseUserCollection);
-      final result = await userRef.doc(userId).delete();
+      await userRef.doc(userId).delete();
       _status = Status.Success;
       responseMsg = "Employee deleted successfully";
       notifyListeners();
     } catch(err) {
-      print("delete err: ${err.toString()}");
+      print("employee delete err: ${err.toString()}");
       _status = Status.Error;
       responseMsg = "Delete failed!";
       notifyListeners();
@@ -298,6 +298,103 @@ class FirebaseProvider with ChangeNotifier {
       _status = Status.Error;
       notifyListeners();
       return null;
+    }
+  }
+
+  Future<List<VisitModel>?> fetchVisits(String createdBy, String companyId, String userType) async {
+    _status = Status.Loading;
+    notifyListeners();
+    try {
+      CollectionReference visitRef = firebaseFirestore.collection(Constants.FirebaseVisitCollection);
+      if (userType == Constants.DefaultEmployeeType) {
+        QuerySnapshot snapshots = await visitRef
+            .where(Constants.FirebaseVisitCreatedBy, isEqualTo: createdBy)
+            .orderBy(Constants.FirebaseVisitCreatedTime, descending: true)
+            .get();
+        print("visits snapshots for employee: ${snapshots.docs.length}");
+        List<DocumentSnapshot> documents = snapshots.docs;
+        List<VisitModel> visits = [];
+        if (documents.isNotEmpty) {
+          documents.forEach((DocumentSnapshot documentSnapshot) {
+            VisitModel visitModelForEmployee = VisitModel.from(documentSnapshot);
+            visits.add(visitModelForEmployee);
+          });
+          responseMsg = "Visits loaded successfully";
+          _status = Status.Success;
+          notifyListeners();
+          return visits;
+        } else {
+          responseMsg = "No visits found";
+          _status = Status.Fail;
+          notifyListeners();
+          return visits;
+        }
+      } else {
+        QuerySnapshot snapshots = await visitRef
+            .where(Constants.FirebaseVisitCompanyId, isEqualTo: companyId)
+            .orderBy(Constants.FirebaseVisitCreatedTime, descending: true)
+            .get();
+        print("visits snapshots for admin: ${snapshots.docs.length}");
+        List<DocumentSnapshot> documents = snapshots.docs;
+        List<VisitModel> visits = [];
+        if (documents.isNotEmpty) {
+          documents.forEach((DocumentSnapshot documentSnapshot) {
+            VisitModel visitModelForAdmin = VisitModel.from(documentSnapshot);
+            visits.add(visitModelForAdmin);
+          });
+          responseMsg = "Visits loaded successfully";
+          _status = Status.Success;
+          notifyListeners();
+          return visits;
+        } else {
+          responseMsg = "No visits found";
+          _status = Status.Fail;
+          notifyListeners();
+          return visits;
+        }
+      }
+    } catch (err) {
+      print("fetch visits err: ${err.toString()}");
+      responseMsg = "Error while fetching";
+      _status = Status.Error;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<VisitModel?> updateVisit(VisitModel visitModel) async {
+    _status = Status.Loading;
+    notifyListeners();
+    try {
+      CollectionReference visitRef = firebaseFirestore.collection(Constants.FirebaseVisitCollection);
+      await visitRef.doc(visitModel.id).update(visitModel.toMap());
+      responseMsg = "Visit data has been updated";
+      _status = Status.Success;
+      notifyListeners();
+      return visitModel;
+    } catch (err) {
+      print("update visit err: ${err.toString()}");
+      responseMsg = "Error while updating";
+      _status = Status.Error;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<void> deleteVisit(String visitId) async {
+    _status = Status.Loading;
+    notifyListeners();
+    try {
+      CollectionReference visitRef = firebaseFirestore.collection(Constants.FirebaseVisitCollection);
+      await visitRef.doc(visitId).delete();
+      _status = Status.Success;
+      responseMsg = "Visit has been deleted successfully";
+      notifyListeners();
+    } catch(err) {
+      print("visit delete err: ${err.toString()}");
+      _status = Status.Error;
+      responseMsg = "Delete failed!";
+      notifyListeners();
     }
   }
 

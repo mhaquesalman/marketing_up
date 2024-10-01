@@ -6,7 +6,7 @@ import 'package:marketing_up/add_visit_screen.dart';
 import 'package:marketing_up/app_provider.dart';
 import 'package:marketing_up/firebase_provider.dart';
 import 'package:marketing_up/login_screen.dart';
-import 'package:marketing_up/login_screen_copy.dart';
+import 'package:marketing_up/screens/login_screen_copy.dart';
 import 'package:marketing_up/screens/add_employee_screen.dart';
 import 'package:marketing_up/screens/register_screen.dart';
 import 'package:provider/provider.dart';

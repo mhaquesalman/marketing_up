@@ -7,6 +7,9 @@ import 'package:marketing_up/location_screen.dart';
 import 'package:marketing_up/login_screen.dart';
 import 'package:marketing_up/models/user_model.dart';
 import 'package:marketing_up/screens/add_visit_screen_copy.dart';
+import 'package:marketing_up/screens/dashboard_screen_copy.dart';
+import 'package:marketing_up/screens/login_screen_copy.dart';
+import 'package:marketing_up/screens/visit_list_screen_copy.dart';
 import 'package:marketing_up/visit_list_screen.dart';
 import 'package:marketing_up/webview_screen.dart';
 import 'package:provider/provider.dart';
@@ -16,13 +19,6 @@ import 'location_screen_copy.dart';
 
 const url =
     "https://static.vecteezy.com/system/resources/thumbnails/002/002/403/small/man-with-beard-avatar-character-isolated-icon-free-vector.jpg";
-
-enum CurrentPage {
-  DashboardScreen,
-  AddVisitScreen,
-  VisitListScreen,
-  LocationScreen
-}
 
 class DrawerWidget extends StatefulWidget {
   UserModel? userModel;
@@ -37,27 +33,27 @@ class _DrawerWidgetState extends State<DrawerWidget> {
   // late CurrentPage currentPage;
 
   void goToScreen(BuildContext context, String screen) {
+    context.read<FirebaseProvider>().resetStatus();
     Navigator.pop(context);
     switch (screen) {
       case "add": {
         context.read<AppProvider>().setCurrentPage(CurrentPage.AddVisitScreen);
-        context.read<FirebaseProvider>().resetStatus();
-        Navigator.of(context).push(
+        Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => AddVisitScreenCopy(userModel: widget.userModel,))
         );
         break;
       }
       case "lists": {
         context.read<AppProvider>().setCurrentPage(CurrentPage.VisitListScreen);
-        Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => VisitListScreen())
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => VisitListScreenCopy(userModel: widget.userModel,))
         );
         break;
       }
       case "dashboard": {
         context.read<AppProvider>().setCurrentPage(CurrentPage.DashboardScreen);
-        Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => DashboardScreen())
+        Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => DashboardScreenCopy(userModel: widget.userModel,))
         );
         break;
       }
@@ -121,10 +117,11 @@ class _DrawerWidgetState extends State<DrawerWidget> {
             },
           ),
           ListTile(
-            title: Text("Add Visit"),
-            textColor: currentPage == CurrentPage.AddVisitScreen ? Colors.redAccent : Colors.black,
+            title: Text(currentPage == CurrentPage.EditVisitScreen ? "Edit Visit" : "Add Visit"),
+            textColor: currentPage == CurrentPage.AddVisitScreen || currentPage == CurrentPage.EditVisitScreen
+                ? Colors.redAccent : Colors.black,
             onTap: () {
-              if (currentPage == CurrentPage.AddVisitScreen) return;
+              if (currentPage == CurrentPage.AddVisitScreen || currentPage == CurrentPage.EditVisitScreen) return;
               goToScreen(context, "add");
             },
           ),
@@ -133,19 +130,17 @@ class _DrawerWidgetState extends State<DrawerWidget> {
             textColor: currentPage == CurrentPage.LocationScreen ? Colors.redAccent : Colors.black,
             onTap: () {
               if (currentPage == CurrentPage.LocationScreen) return;
-              goToScreen(context, "location");
+              // goToScreen(context, "location");
             },
           ) : SizedBox.shrink(),
           ListTile(
-            title: Text("Setting"),
-            onTap: () {},
-          ),
-          ListTile(
             title: Text("Logout"),
             onTap: () {
+              context.read<AppProvider>().setCurrentPage(CurrentPage.LoginScreen);
+              context.read<FirebaseProvider>().resetStatus();
               // Navigator.of(context).popUntil((route) => route.isFirst);
               Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                  MaterialPageRoute(builder: (context) => LoginScreenCopy()),
                       (Route<dynamic> route) => false);
             },
           )

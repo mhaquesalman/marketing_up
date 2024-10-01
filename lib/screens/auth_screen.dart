@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:marketing_up/login_screen_copy.dart';
+import 'package:marketing_up/screens/login_screen_copy.dart';
 
 import '../dashboard_screen.dart';
 

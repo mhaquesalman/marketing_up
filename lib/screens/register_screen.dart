@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:marketing_up/app_provider.dart';
 import 'package:marketing_up/constants.dart';
 import 'package:marketing_up/firebase_provider.dart';
 import 'package:marketing_up/models/user_model.dart';
@@ -35,6 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String fullname = "";
   String phone = "";
   String password = "";
+  bool retry = false;
   List<File> image = [];
   late FirebaseProvider firebaseProvider;
   UserModel? createdUserModel;
@@ -108,57 +110,72 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    CurrentPage currentPage = context.watch<AppProvider>().currentPage;
     Status status = context.watch<FirebaseProvider>().status;
     String responseMsg = Provider.of<FirebaseProvider>(context).responseMsg;
     // print("status: $status");
 
     // to show snackbar we have to use inside addpostframecallback
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (status == Status.Success && createdUserModel != null) {
-        Utils.showSnackbar(context, responseMsg);
-        firebaseProvider.resetStatus();
-      } else if (status == Status.Fail) {
-        if (responseMsg.contains("9999"))
-          showAlertDialog(responseMsg);
-        else
+      if (currentPage == CurrentPage.RegisterScreen || currentPage == CurrentPage.EditEmployeeScreen) {
+        if (status == Status.Success && createdUserModel != null) {
           Utils.showSnackbar(context, responseMsg);
-      } else if (status == Status.Error) {
-        Utils.showSnackbar(context, responseMsg);
+          firebaseProvider.resetStatus();
+        } else if (status == Status.Fail) {
+          if (responseMsg.contains("9999"))
+            showAlertDialog(responseMsg);
+          else
+            Utils.showSnackbar(context, responseMsg);
+          firebaseProvider.resetStatus();
+        } else if (status == Status.Error) {
+          Utils.showSnackbar(context, responseMsg);
+          firebaseProvider.resetStatus();
+        }
       }
     });
 
     return Scaffold(
         appBar: appBarWidget(context),
-        body: Form(
-          key: formKey,
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                children: [
-                  status == Status.Loading
-                      ? Padding(
-                          padding: EdgeInsets.only(top: 10, bottom: 10),
-                          child: LinearProgressIndicator(),
-                        )
-                      : SizedBox.shrink(),
-                  buildTextField(
-                      "fullname", "Fullname is required!", nameFocusNode),
-                  buildTextField("email", "Email is required!", emailFocusNode),
-                  buildTextField(
-                      "phone", "Phone must be 8 digit!", phoneFocusNode),
-                  buildTextField("password", "Password length must be 6",
-                      passwordFocusNode),
-                  buildRegisterButton(context, status),
-                  ImagePickerWidget(
-                    clearImage: clearImagePicker,
-                    singleImage: true,
-                    savedImages: (files) {
-                      image.clear();
-                      image.addAll(files);
-                    },
-                  )
-                ],
+        body: WillPopScope(
+          onWillPop: () async {
+            if (currentPage == CurrentPage.RegisterScreen)
+              context.read<AppProvider>().setCurrentPage(CurrentPage.LoginScreen);
+            else if (currentPage == CurrentPage.EditEmployeeScreen)
+              context.read<AppProvider>().setCurrentPage(CurrentPage.DashboardScreen);
+            return true;
+          },
+          child: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  children: [
+                    status == Status.Loading
+                        ? Padding(
+                            padding: EdgeInsets.only(top: 10, bottom: 10),
+                            child: LinearProgressIndicator(),
+                          )
+                        : SizedBox.shrink(),
+                    buildTextField(
+                        "fullname", "Fullname is required!", nameFocusNode, status),
+                    buildTextField("email", "Email is required!", emailFocusNode, status),
+                    buildTextField(
+                        "phone", "Phone must be 8 digit!", phoneFocusNode, status),
+                    buildTextField("password", "Password length must be 6",
+                        passwordFocusNode, status),
+                    buildRegisterButton(context, status),
+                    ImagePickerWidget(
+                      clearImage: clearImagePicker,
+                      singleImage: true,
+                      imageFromFirestore: [],
+                      savedImages: (files) {
+                        image.clear();
+                        image.addAll(files);
+                      },
+                    )
+                  ],
+                ),
               ),
             ),
           ),
@@ -185,6 +202,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
         onPressed: () {
+          setState(() {
+            retry = false;
+          });
           if (status == Status.Loading) return;
           submitData();
         },
@@ -192,7 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget buildTextField(String label, String errMsg, FocusNode focusNode) {
+  Widget buildTextField(String label, String errMsg, FocusNode focusNode, Status status) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 10),
       child: TextFormField(
@@ -213,6 +233,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ? Icon(Icons.visibility)
                         : Icon(Icons.visibility_off),
                     onPressed: () {
+                      if (status == Status.Fail || status == Status.Error)
+                        retry = true;
+                      else
+                        retry = false;
                       setState(() {
                         isObscured = !isObscured;
                       });

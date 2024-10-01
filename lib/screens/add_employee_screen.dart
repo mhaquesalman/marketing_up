@@ -7,11 +7,11 @@ import 'package:intl/intl.dart';
 import 'package:marketing_up/widgets/appbar_widget.dart';
 import 'package:provider/provider.dart';
 
-import '../constants.dart';
-import '../firebase_provider.dart';
-import '../imagepicker_widget.dart';
-import '../models/user_model.dart';
-import '../utils.dart';
+import 'package:marketing_up/constants.dart';
+import 'package:marketing_up/firebase_provider.dart';
+import 'package:marketing_up/imagepicker_widget.dart';
+import 'package:marketing_up/models/user_model.dart';
+import 'package:marketing_up/utils.dart';
 import 'package:marketing_up/widgets/gradient_background.dart';
 
 class AddEmployeeScreen extends StatefulWidget {
@@ -35,6 +35,7 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
   FocusNode activeStatusFocusNode = FocusNode();
   TextEditingController activeController = TextEditingController();
   bool isObscured = true;
+  bool isDeleting = false;
   bool clearImagePicker = false;
   String email = "";
   String fullname = "";
@@ -181,9 +182,8 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
   }
 
   void deleteEmployee() async {
-    if (widget.isEdit == true) {
+    if (widget.isEdit == true)
       await firebaseProvider.deleteEmployee(widget.userModel!.id!);
-    }
   }
 
   @override
@@ -228,13 +228,11 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
           // firebaseProvider.resetStatus();
           widget.refetch!();
           Navigator.pop(context);
-
         } else {
           Utils.showSnackbar(context, responseMsg);
           // firebaseProvider.resetStatus();
           widget.refetch!();
           Navigator.pop(context);
-
         }
       } else if (status == Status.Fail) {
         Utils.showSnackbar(context, responseMsg);
@@ -280,11 +278,10 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
                 //
                 //   ],
                 // ),
-                widget.isEdit == true ? buildDateTimeField("Created At", dateCreateController) : SizedBox(height: 0,),
-                widget.isEdit == true ? buildDateTimeField("Updated At", dateUpdateController) : SizedBox(height: 0,),
+                // widget.isEdit == true ? buildDateTimeField("Created At", dateCreateController) : SizedBox(height: 0,),
+                // widget.isEdit == true ? buildDateTimeField("Updated At", dateUpdateController) : SizedBox(height: 0,),
                 buildDropDownMenu(),
                 widget.isEdit == null ? buildRegisterButton(context, status) : Row(
-
                   children: [
                     Expanded(child: buildRegisterButton(context, status)),
                     Expanded(child: buildDeleteEmployeeButton(context, status))
@@ -393,16 +390,21 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
       ),
       child: TextButton(
         child: Text(
-          status == Status.Loading ? "Please wait" : widget.isEdit == true ? "Update Employee" : "Register Employee",
+          status == Status.Loading && !isDeleting
+              ? "Please wait"
+              : widget.isEdit == true ? "Update Employee" : "Register Employee",
           style: TextStyle(
               color: Colors.white,
-              fontSize: 18.0,
+              fontSize: 16.0,
               fontFamily: GoogleFonts.poppins().fontFamily),
           textAlign: widget.isEdit == true ? TextAlign.center : null,
         ),
         onPressed: () {
           if (status == Status.Loading) return;
           submitData();
+          setState(() {
+            isDeleting = false;
+          });
         },
       ),
     );
@@ -417,16 +419,19 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
       ),
       child: TextButton(
         child: Text(
-          status == Status.Loading ? "Please wait" : "Delete Employee",
+          status == Status.Loading && isDeleting ? "Please wait" : "Delete Employee",
           style: TextStyle(
               color: Colors.white,
-              fontSize: 18.0,
+              fontSize: 16.0,
               fontFamily: GoogleFonts.poppins().fontFamily),
           textAlign: TextAlign.center,
         ),
         onPressed: () {
           if (status == Status.Loading) return;
           deleteEmployee();
+          setState(() {
+            isDeleting = true;
+          });
         },
       ),
     );

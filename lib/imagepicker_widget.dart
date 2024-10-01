@@ -9,7 +9,7 @@ class ImagePickerWidget extends StatefulWidget {
   bool clearImage;
   bool singleImage;
   bool? isEdit = false;
-  List<String>? imageFromFirestore = [];
+  List<String>? imageFromFirestore;
   Function(List<File>) savedImages;
 
   ImagePickerWidget(
@@ -66,6 +66,11 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
             maxHeight: 300,
             aspectRatio: CropAspectRatio(ratioX: 1, ratioY: 1));
         if (croppedFile != null) {
+          if (widget.isEdit == true) {
+            if (widget.imageFromFirestore != null && widget.imageFromFirestore!.isNotEmpty) {
+              widget.imageFromFirestore!.clear();
+            }
+          }
           setState(() {
             myImageFile.add(File(croppedFile.path));
           });
@@ -98,8 +103,6 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
           height: 50,
           child: ElevatedButton(
               onPressed: () {
-                if (widget.isEdit == true)
-                  widget.imageFromFirestore!.clear();
                 handleImage();
               },
               style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),

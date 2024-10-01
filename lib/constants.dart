@@ -47,4 +47,17 @@ class Constants {
   static const FirebaseVisitPosition = "position";
   static const FirebaseVisitDate = "visit_date";
   static const FirebaseVisitPerson = "visiting_person";
+
+  // location collection
+static const FirebaseLocationCollection = "live_locations";
+static const FirebaseLocationId = "id";
+static const FirebaseLocationCompanyId = "company_id";
+static const FirebaseLocationAreaName = "area_name";
+static const FirebaseLocationCreatedBy = "created_by";
+static const FirebaseLocationCreatedTime = "created_time";
+static const FirebaseLocationLatPosition = "lat_position";
+static const FirebaseLocationLonPosition = "long_position";
+static const FirebaseLocationStreetAddress = "streat_address";
+static const FirebaseLocationOnline = "online";
+
 }

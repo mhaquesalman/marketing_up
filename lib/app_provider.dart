@@ -1,13 +1,27 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:marketing_up/drawer_widget.dart';
+
 
 const String ADMIN_EMAIL = "admin@hrsoftbd.com";
+enum CurrentPage {
+  LoginScreen,
+  RegisterScreen,
+  EditEmployeeScreen,
+  DashboardScreen,
+  AddVisitScreen,
+  EditVisitScreen,
+  VisitListScreen,
+  LocationScreen,
+  LogoutScreen,
+}
+
 
 class AppProvider with ChangeNotifier {
   String _userType = "";
   String get userType => _userType;
-  CurrentPage currentPage = CurrentPage.DashboardScreen;
+  Position? _position;
+  Position? get position => _position;
+  CurrentPage currentPage = CurrentPage.LoginScreen;
 
   void setUserType(String type) {
     _userType = type;
@@ -20,10 +34,9 @@ class AppProvider with ChangeNotifier {
 
   Future<Position> getCurrentLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return Future.error("Location is disabled");
+    if (!serviceEnabled) return Future.error("Location is disabled please enable location");
 
-    LocationPermission locationPermission =
-        await Geolocator.checkPermission();
+    LocationPermission locationPermission = await Geolocator.checkPermission();
     if (locationPermission == LocationPermission.denied) {
       locationPermission = await Geolocator.requestPermission();
       if (locationPermission == LocationPermission.denied) {
@@ -31,10 +44,12 @@ class AppProvider with ChangeNotifier {
       }
     }
     if (locationPermission == LocationPermission.deniedForever) {
-      return Future.error("Can not access location");
+      return Future.error("Can not access location without permission");
     }
 
-    return await Geolocator.getCurrentPosition();
+    Position pos = await Geolocator.getCurrentPosition();
+    _position = pos;
+    return pos;
   }
   
 }

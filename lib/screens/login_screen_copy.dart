@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:marketing_up/app_provider.dart';
 import 'package:marketing_up/dashboard_screen.dart';
+import 'package:marketing_up/drawer_widget.dart';
 import 'package:marketing_up/firebase_provider.dart';
 import 'package:marketing_up/models/user_model.dart';
 import 'package:marketing_up/screens/dashboard_screen_copy.dart';
@@ -69,6 +71,8 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
   }
 
   void goDashboard() {
+    firebaseProvider.resetStatus();
+    context.read<AppProvider>().setCurrentPage(CurrentPage.DashboardScreen);
     Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
             builder: (context) => DashboardScreenCopy(
@@ -92,24 +96,28 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
 
   @override
   Widget build(BuildContext context) {
+    CurrentPage currentPage = context.watch<AppProvider>().currentPage;
     Status status = context.watch<FirebaseProvider>().status;
     String responseMsg = Provider.of<FirebaseProvider>(context).responseMsg;
 
-    // print("login: $status");
+    print("login: $status");
 
     // to show snackbar we have to use inside addpostframecallback
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (status == Status.Success && userModel != null) {
-        // showSnackbar(context, responseMsg);
-        firebaseProvider.resetStatus();
-        goDashboard();
-      } else if (status == Status.Fail && !retry) {
-        if (responseMsg.contains("9999") || responseMsg.contains("admin"))
-          showAlertDialog(responseMsg);
-        else
-          Utils.showSnackbar(context, responseMsg);
-      } else if (status == Status.Error && !retry) {
-        showSnackbar(context, responseMsg);
+      if (currentPage == CurrentPage.LoginScreen) {
+        if (status == Status.Success && userModel != null) {
+          // showSnackbar(context, responseMsg);
+          goDashboard();
+        } else if (status == Status.Fail && !retry) {
+          if (responseMsg.contains("9999") || responseMsg.contains("admin"))
+            showAlertDialog(responseMsg);
+          else
+            Utils.showSnackbar(context, responseMsg);
+          firebaseProvider.resetStatus();
+        } else if (status == Status.Error && !retry) {
+          showSnackbar(context, responseMsg);
+          firebaseProvider.resetStatus();
+        }
       }
     });
 
@@ -134,13 +142,15 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
               ),
               buildTextField("email", emailController, status),
               buildTextField("password", passwordController, status),
-              buildLoginButton(context, status),
+              buildLoginButton(status),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text("Don't have an account?"),
                   TextButton(
                       onPressed: () {
+                        firebaseProvider.resetStatus();
+                        context.read<AppProvider>().setCurrentPage(CurrentPage.RegisterScreen);
                         Navigator.of(context).push(MaterialPageRoute(
                             builder: (context) => RegisterScreen()));
                       },
@@ -159,9 +169,9 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
         ));
   }
 
-  Container buildLoginButton(BuildContext context, Status status) {
+  Container buildLoginButton(Status status) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 20.0, horizontal: 20),
+      margin: EdgeInsets.symmetric(vertical: 18.0, horizontal: 14),
       height: 60.0,
       width: double.infinity,
       decoration: BoxDecoration(
