@@ -136,8 +136,9 @@ class _DrawerWidgetState extends State<DrawerWidget> {
           ListTile(
             title: Text("Logout"),
             onTap: () {
-              context.read<AppProvider>().setCurrentPage(CurrentPage.LoginScreen);
               context.read<FirebaseProvider>().resetStatus();
+              context.read<FirebaseProvider>().logout(widget.userModel!.userType);
+              context.read<AppProvider>().setCurrentPage(CurrentPage.LoginScreen);
               // Navigator.of(context).popUntil((route) => route.isFirst);
               Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => LoginScreenCopy()),

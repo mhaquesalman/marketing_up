@@ -70,6 +70,25 @@ class UserModel {
     return map;
   }
 
+  Map<String, dynamic> toMapForLocal() {
+    final map = <String, dynamic>{};
+    map[Constants.FirebaseUserId] = id;
+    map[Constants.FirebaseActiveStatus] = activeStatus;
+    map[Constants.FirebaseCompanyUserLimit] = companyUserLimit;
+    map[Constants.FirebaseCompanyId] = companyId;
+    map[Constants.FirebaseCompanyVisitLimit] = companyVisitLimit;
+    map[Constants.FirebaseCreatedAt] = createdAt.toIso8601String();
+    map[Constants.FirebaseCreatedBy] = createdBy;
+    map[Constants.FirebaseEmail] = email;
+    map[Constants.FirebaseFullName] = fullName;
+    map[Constants.FirebasePassword] = password;
+    map[Constants.FirebasePhoneNumber] = phoneNumber;
+    map[Constants.FirebaseUpdatedAt] = updatedAt.toIso8601String();
+    map[Constants.FirebaseUserPhoto] = "userPhoto";
+    map[Constants.FirebaseUserType] = userType;
+    return map;
+  }
+
   factory UserModel.from(DocumentSnapshot doc) {
     return UserModel(
         id: doc.get(Constants.FirebaseUserId) ?? "",

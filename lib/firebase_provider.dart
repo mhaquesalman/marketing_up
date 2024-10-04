@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:marketing_up/constants.dart';
+import 'package:marketing_up/models/location_model.dart';
 import 'package:marketing_up/models/user_model.dart';
 import 'package:marketing_up/models/visit_model.dart';
 import 'package:marketing_up/utils.dart';
@@ -28,17 +31,18 @@ class FirebaseProvider with ChangeNotifier {
   FirebaseProvider(
       {required this.firebaseFirestore, required this.firebaseAuth, required this.preferences});
 
-  String? getEmployeeIdFromSharedPref() => preferences.getString(Constants.SharedPrefEmployeeId);
+  String? getEmployeeFromSharedPref() => preferences.getString(Constants.SharedPrefSavedEmployee);
   String? getEmployeeLoggedInExpiredFromSharedPref() => preferences.getString(Constants.SharedPrefEmployeeLoginExpired);
+  String? getEmployeeLoginTimeFromSharedPref() => preferences.getString(Constants.SharedPrefEmployeeLoginTime);
 
   bool isEmployeeLoggedIn() {
     bool isLoginNotExpired = false;
     if (getEmployeeLoggedInExpiredFromSharedPref() != null) {
       DateTime expiredTime = DateTime.parse(getEmployeeLoggedInExpiredFromSharedPref()!);
-      isLoginNotExpired = expiredTime.isBefore(DateTime.now());
+      isLoginNotExpired = DateTime.now().isBefore(expiredTime);
     }
-    bool isIdSaved = getEmployeeIdFromSharedPref() != null;
-    return isIdSaved && isLoginNotExpired;
+    bool isEmployeeSaved = getEmployeeFromSharedPref() != null;
+    return isEmployeeSaved && isLoginNotExpired;
   }
 
   Future<UserModel?> registerUser(UserModel userModel,
@@ -148,8 +152,11 @@ class FirebaseProvider with ChangeNotifier {
             String encryptPass = Utils.encryptPassword(plainPassword);
             if (encryptPass == userModel.password) {
               if (userModel.activeStatus) {
-                // DateTime loginWillExpire = DateTime.now().add(
-                //     const Duration(days: 30));
+                DateTime loginTime = DateTime.now();
+                DateTime loginWillExpire = loginTime.add(const Duration(days: 7));
+                final jsonValue = jsonEncode(userModel.toMapForLocal());
+                // print("json model: $jsonValue");
+                // await preferences.setString(Constants.SharedPrefEmployeeLoginTime, loginTime.toIso8601String());
                 // await preferences.setString(
                 //     Constants.SharedPrefEmployeeId, userModel.id!);
                 // await preferences.setString(
@@ -395,6 +402,66 @@ class FirebaseProvider with ChangeNotifier {
       _status = Status.Error;
       responseMsg = "Delete failed!";
       notifyListeners();
+    }
+  }
+
+  Future<LocationModel?> insertLocation(LocationModel locationModel) async {
+    _status = Status.Loading;
+    notifyListeners();
+    try {
+      CollectionReference locationRef = firebaseFirestore.collection(Constants.FirebaseLocationCollection);
+      // generate unique id using UniqueKey()
+      String locationRefId = UniqueKey().hashCode.toString();
+      LocationModel locationModelWithId = locationModel.copyWith(id: locationRefId);
+      await locationRef.doc(locationRefId).set(locationModelWithId.toMap());
+      responseMsg = "New location has been added";
+      _status = Status.Success;
+      notifyListeners();
+      return locationModelWithId;
+    } catch (err) {
+      print("insert location err: ${err.toString()}");
+      responseMsg = "Error while creating";
+      _status = Status.Error;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<List<LocationModel>?> fetchLocations(String userType, String companyId) async {
+    _status = Status.Loading;
+    notifyListeners();
+    try {
+      CollectionReference locationRef = firebaseFirestore.collection(Constants.FirebaseLocationCollection);
+      if (userType == Constants.DefaultUserType) {
+        QuerySnapshot snapshots = await locationRef
+            .where(Constants.FirebaseCompanyId, isEqualTo: companyId)
+            .orderBy(Constants.FirebaseVisitCreatedTime, descending: true)
+            .get();
+        // print("locations snapshots: ${snapshots.docs.length}");
+        List<DocumentSnapshot> documents = snapshots.docs;
+        List<LocationModel> locations = [];
+        if (documents.isNotEmpty) {
+          documents.forEach((DocumentSnapshot documentSnapshot) {
+            LocationModel locationModel = LocationModel.from(documentSnapshot);
+            locations.add(locationModel);
+          });
+          responseMsg = "locations loaded successfully";
+          _status = Status.Success;
+          notifyListeners();
+          return locations;
+        } else {
+          responseMsg = "No locations found";
+          _status = Status.Fail;
+          notifyListeners();
+          return locations;
+        }
+      } else return null;
+    } catch (err) {
+      print("fetch visits err: ${err.toString()}");
+      responseMsg = "Error while fetching";
+      _status = Status.Error;
+      notifyListeners();
+      return null;
     }
   }
 

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:marketing_up/app_provider.dart';
 import 'package:marketing_up/dashboard_screen.dart';
@@ -30,7 +33,9 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
   bool isObscured = true;
   bool fieldsError = false;
   bool retry = false;
+  bool? hasConnection;
   late FirebaseProvider firebaseProvider;
+  late StreamSubscription streamSubscription;
 
   void showAlertDialog(String msg) {
     showDialog(
@@ -49,14 +54,6 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
     );
   }
 
-  void showSnackbar(BuildContext context, String text) {
-    final snackBar = SnackBar(
-      content: Text(text),
-      duration: Duration(seconds: 3),
-    );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
   void submitLoginData() async {
     email = emailController.text;
     password = passwordController.text;
@@ -66,7 +63,7 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
         userModel = UserModel.fromMap(userInfo);
       }
     } else {
-      showSnackbar(context, "Fields are empty please fill up");
+      Utils.showSnackbar(context, "Fields are empty please fill up");
     }
   }
 
@@ -81,9 +78,21 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
         (Route<dynamic> route) => false);
   }
 
+  void getConnection() async {
+    hasConnection = await Utils.checkInternet();
+    print("connection: $hasConnection");
+  }
+
   @override
   void initState() {
     firebaseProvider = context.read<FirebaseProvider>();
+    getConnection();
+    // streamSubscription = Utils().internetListener(onConnectionCheck: (result) {
+    //   print('connection change: $result');
+    // });
+    streamSubscription = Connectivity().onConnectivityChanged.listen((result) {
+      print('connection change: $result');
+    });
     super.initState();
   }
 
@@ -91,6 +100,7 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+    streamSubscription.cancel();
     super.dispose();
   }
 
@@ -100,7 +110,6 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
     Status status = context.watch<FirebaseProvider>().status;
     String responseMsg = Provider.of<FirebaseProvider>(context).responseMsg;
 
-    print("login: $status");
 
     // to show snackbar we have to use inside addpostframecallback
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
@@ -115,7 +124,7 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
             Utils.showSnackbar(context, responseMsg);
           firebaseProvider.resetStatus();
         } else if (status == Status.Error && !retry) {
-          showSnackbar(context, responseMsg);
+          Utils.showSnackbar(context, responseMsg);
           firebaseProvider.resetStatus();
         }
       }

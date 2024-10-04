@@ -11,13 +11,17 @@ import 'package:marketing_up/screens/add_employee_screen.dart';
 import 'package:marketing_up/screens/register_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
+import 'package:marketing_up/helper/workmanager_callback.dart';
 import 'firebase_options.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform
   );
+  await Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
   SharedPreferences prefs = await SharedPreferences.getInstance();
   runApp(MyApp(sharedPreferences: prefs));
 }

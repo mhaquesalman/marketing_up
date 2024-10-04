@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:marketing_up/app_provider.dart';
 import 'package:marketing_up/constants.dart';
@@ -10,9 +13,11 @@ import 'package:marketing_up/screens/login_screen_copy.dart';
 import 'package:marketing_up/models/user_model.dart';
 import 'package:marketing_up/screens/add_employee_screen.dart';
 import 'package:marketing_up/screens/register_screen.dart';
+import 'package:marketing_up/utils.dart';
 import 'package:marketing_up/visitmodel.dart';
 import 'package:marketing_up/widgets/gradient_background.dart';
 import 'package:provider/provider.dart';
+import 'package:workmanager/workmanager.dart';
 
 class DashboardScreenCopy extends StatefulWidget {
   final UserModel? userModel;
@@ -28,6 +33,12 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
   late String createdBy;
   late String id;
   List<UserModel>? employees;
+  Position? position;
+  List<Position> listOfPositions = [];
+  Placemark? placemark;
+  String address = "";
+  String? loginTime;
+  late StreamSubscription<Position> streamSubscription;
   DateFormat dateFormat = DateFormat("MMM dd - yyyy, h:mm a");
 
   Future<void> fetchData() async {
@@ -35,19 +46,98 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
     print("employees: ${employees!.length}");
   }
 
+  void trackLocation() async {
+    position = await Utils().getCurrentLocation();
+    print("position from main: $position");
+    // placemark = await Utils().getAddressFromLatLon(position!.latitude, position!.longitude);
+    // String address = await Utils().getPlacemarks(23.737789, 90.401332);
+    address = await Utils().getPlacemarks(position!.latitude, position!.longitude);
+    initWorkmanagerToFetchLocation();
+    liveLocation();
+  }
+
+  void liveLocation() {
+    LocationSettings locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 100,
+        // timeLimit: Duration(minutes: 10)
+    );
+
+    streamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings)
+        .listen((Position pos) {
+          print("lat: ${pos.latitude}");
+          print("lon: ${pos.longitude}");
+          listOfPositions.add(pos);
+          // workWithLatestPosition(pos);
+    });
+
+  }
+
+  void workWithLatestPosition(Position pos) async {
+    bool hasConnection = await Utils.checkInternet();
+    if (hasConnection) {
+      if (loginTime != null) {
+        final loginTimeWithSixHoursExtra = DateTime.parse(loginTime!).add(const Duration(hours: 6));
+        bool isTimeOver = DateTime.now().isAfter(loginTimeWithSixHoursExtra);
+        if (isTimeOver) {
+          // save in remote
+          // save last 3 data if list is big
+          final newList = listOfPositions.length > 3 ? listOfPositions.sublist(listOfPositions.length - 3) : listOfPositions;
+          newList.forEach((element) {
+
+          });
+        } else {
+          // save in local
+        }
+      } else {
+        // save in remote
+      }
+    } else {
+      // save in local
+    }
+  }
+
+  void initWorkmanagerToFetchLocation() async {
+    await Workmanager().registerPeriodicTask(
+        Constants.LocationFetchUniqueName,
+        Constants.LocationFetchTaskName,
+        frequency: const Duration(minutes: 15),
+        initialDelay: const Duration(seconds: 10),
+        inputData: {Constants.FirebaseUserId: widget.userModel!.id,
+          Constants.FirebaseCompanyId: widget.userModel!.companyId}
+    );
+
+    // await Workmanager().registerOneOffTask(
+    //     Constants.LocationFetchUniqueName2,
+    //     Constants.LocationFetchTaskName2,
+    //     initialDelay: const Duration(seconds: 10),
+    //     inputData: {"latitude": position?.latitude ?? 1.1, "longitude": position?.longitude ?? 2.2}
+    // );
+  }
+
   @override
   void initState() {
+    loginTime = context.read<FirebaseProvider>().getEmployeeLoginTimeFromSharedPref();
     userType = widget.userModel!.userType;
     createdBy = widget.userModel!.createdBy;
     id = widget.userModel!.id!;
-    print("usermodel: ${widget.userModel}");
+    // print("usermodel: ${widget.userModel}");
     // ideal for calling provider from initstate
+    if (userType == Constants.DefaultEmployeeType) {
+      trackLocation();
+    }
     Future.microtask(() => fetchData());
     super.initState();
   }
 
+  void cancelWorkmanager() async {
+    print("workmanager canceled");
+    await Workmanager().cancelByUniqueName(Constants.LocationFetchUniqueName);
+  }
   @override
   void dispose() {
+    cancelWorkmanager();
+    streamSubscription.cancel();
     super.dispose();
   }
   
@@ -61,8 +151,11 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
         iconTheme: IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-              onPressed: () {
+              onPressed: () async {
+                context.read<FirebaseProvider>().resetStatus();
                 context.read<FirebaseProvider>().logout(userType);
+                context.read<AppProvider>().setCurrentPage(CurrentPage.LoginScreen);
+                await Workmanager().cancelByUniqueName(Constants.LocationFetchUniqueName);
                 Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (context) => LoginScreenCopy()),
                         (Route<dynamic> route) => false);

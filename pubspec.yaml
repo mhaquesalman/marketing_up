@@ -51,8 +51,10 @@ dependencies:
   image_cropper:
   firebase_core_platform_interface: ^5.1.0
   firebase_auth: ^4.16.0
+  workmanager:
   shared_preferences:
   dropdown_below:
+  connectivity_plus:
 
 dev_dependencies:
   flutter_test:

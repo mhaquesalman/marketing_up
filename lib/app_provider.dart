@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -51,5 +53,19 @@ class AppProvider with ChangeNotifier {
     _position = pos;
     return pos;
   }
-  
+
+  void liveLocation() {
+    LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 1000,
+      timeLimit: Duration(hours: 1)
+    );
+
+    StreamSubscription<Position> streamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings)
+    .listen((Position pos) {
+      _position = pos;
+    });
+
+  }
+
 }

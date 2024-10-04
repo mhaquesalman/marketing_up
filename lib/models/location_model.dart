@@ -17,9 +17,14 @@ class LocationModel {
     required this.createdTime, required this.latPosition, required this.lonPosition,
     required this.streetAddress, required this.online});
 
+  // LocationModel.withId({this.id, required this.areaName, required this.companyId, required this.createdBy,
+  //   required this.createdTime, required this.latPosition, required this.lonPosition,
+  //   required this.streetAddress, required this.online});
+
 
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{};
+    map[Constants.FirebaseLocationId] = id;
     map[Constants.FirebaseLocationAreaName] = areaName;
     map[Constants.FirebaseLocationCompanyId] = companyId;
     map[Constants.FirebaseLocationCreatedBy] = createdBy;
@@ -28,7 +33,6 @@ class LocationModel {
     map[Constants.FirebaseLocationLonPosition] = lonPosition;
     map[Constants.FirebaseLocationStreetAddress] = streetAddress;
     map[Constants.FirebaseLocationOnline] = online;
-
     return map;
   }
 
@@ -54,7 +58,8 @@ class LocationModel {
     DateTime? createdTime,
     String? latPosition,
     String? lonPosition,
-    String? streetAddress
+    String? streetAddress,
+    bool? online
 }) {
     return LocationModel(
         id: id ?? this.id,
@@ -64,7 +69,39 @@ class LocationModel {
         createdTime: createdTime ?? this.createdTime,
         latPosition: latPosition ?? this.latPosition,
         lonPosition: lonPosition ?? this.lonPosition,
-        streetAddress: streetAddress ?? this.streetAddress
+        streetAddress: streetAddress ?? this.streetAddress,
+        online: online ?? this.online,
+    );
+  }
+
+
+  Map<String, dynamic> toMapLocal() {
+    final map = <String, dynamic>{};
+    if (id != null) {
+      map[Constants.ColLocationId] = id;
+    }
+    map[Constants.ColLocationAreaName] = areaName;
+    map[Constants.ColLocationCompanyId] = companyId;
+    map[Constants.ColLocationCreatedBy] = createdBy;
+    map[Constants.ColLocationCreatedTime] = createdTime.toIso8601String();
+    map[Constants.ColLocationLatPosition] = latPosition;
+    map[Constants.ColLocationCreatedTime] = lonPosition;
+    map[Constants.ColLocationStreetAddress] = streetAddress;
+    map[Constants.ColLocationOnline] = online == true ? 1 : 0;
+    return map;
+  }
+
+  factory LocationModel.fromMapLocal(Map<String, dynamic> map) {
+    return LocationModel(
+        id: (map[Constants.ColLocationId]).toString(),
+        areaName: map[Constants.ColLocationAreaName],
+        companyId: map[Constants.ColLocationCompanyId],
+        createdBy: map[Constants.ColLocationCreatedBy],
+        createdTime:  DateTime.parse(map[Constants.ColLocationCreatedTime]),
+        latPosition: map[Constants.ColLocationLatPosition],
+        lonPosition: map[Constants.ColLocationLonPosition],
+        streetAddress: map[Constants.ColLocationStreetAddress],
+        online: map[Constants.ColLocationOnline] == 1 ? true : false
     );
   }
 

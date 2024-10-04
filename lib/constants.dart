@@ -28,8 +28,8 @@ class Constants {
   static const DefaultEmployeeType = "employee";
 
   // Shared preferences values for employee
-  static const SharedPrefEmployeeId = "pref_employee_id";
-  static const SharedPrefEmployeeType = "pref_employee_Type";
+  static const SharedPrefSavedEmployee = "pref_employee";
+  static const SharedPrefEmployeeLoginTime = "pref_employee_login_time";
   static const SharedPrefEmployeeLoginExpired = "pref_employee_login_expired";
 
   // visits collection
@@ -49,15 +49,33 @@ class Constants {
   static const FirebaseVisitPerson = "visiting_person";
 
   // location collection
-static const FirebaseLocationCollection = "live_locations";
-static const FirebaseLocationId = "id";
-static const FirebaseLocationCompanyId = "company_id";
-static const FirebaseLocationAreaName = "area_name";
-static const FirebaseLocationCreatedBy = "created_by";
-static const FirebaseLocationCreatedTime = "created_time";
-static const FirebaseLocationLatPosition = "lat_position";
-static const FirebaseLocationLonPosition = "long_position";
-static const FirebaseLocationStreetAddress = "streat_address";
-static const FirebaseLocationOnline = "online";
+  static const FirebaseLocationCollection = "live_locations";
+  static const FirebaseLocationId = "id";
+  static const FirebaseLocationCompanyId = "company_id";
+  static const FirebaseLocationAreaName = "area_name";
+  static const FirebaseLocationCreatedBy = "created_by";
+  static const FirebaseLocationCreatedTime = "created_time";
+  static const FirebaseLocationLatPosition = "lat_position";
+  static const FirebaseLocationLonPosition = "long_position";
+  static const FirebaseLocationStreetAddress = "street_address";
+  static const FirebaseLocationOnline = "online";
+
+  // location local table
+  static const LocationTable = "location_table";
+  static const ColLocationId= 'id';
+  static const ColLocationCompanyId = 'company_id';
+  static const ColLocationAreaName = 'area_name';
+  static const ColLocationCreatedBy = 'created_by';
+  static const ColLocationCreatedTime = 'created_time';
+  static const ColLocationLatPosition = 'lat_position';
+  static const ColLocationLonPosition = 'long_position';
+  static const ColLocationStreetAddress = 'street_address';
+  static const ColLocationOnline = 'online';
+
+  //Defaults value for app
+static const LocationFetchUniqueName = "location_fetch_task_marketingup";
+static const LocationFetchUniqueName2 = "location_fetch_task_marketingup2";
+static const LocationFetchTaskName = "location_fetch_task";
+static const LocationFetchTaskName2 = "location_fetch_task2";
 
 }
