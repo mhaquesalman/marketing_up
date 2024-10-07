@@ -105,8 +105,8 @@ class Utils {
         address += ', ${placemarks.reversed.last.locality ?? ''}';
         address += ', ${placemarks.reversed.last.subAdministrativeArea ?? ''}';
         address += ', ${placemarks.reversed.last.administrativeArea ?? ''}';
-        address += ', ${placemarks.reversed.last.postalCode ?? ''}';
-        address += ', ${placemarks.reversed.last.country ?? ''}';
+        // address += ', ${placemarks.reversed.last.postalCode ?? ''}';
+        // address += ', ${placemarks.reversed.last.country ?? ''}';
       }
 
       print("Your Address for ($lat, $long) is: $address");

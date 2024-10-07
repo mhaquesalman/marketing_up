@@ -55,7 +55,7 @@ class _VisitListScreenCopyState extends State<VisitListScreenCopy> {
     print("visit screen: ${context.watch<FirebaseProvider>().status}");
 
     return Scaffold(
-      appBar: appBarWidget(context),
+      appBar: appBarWidget(context,),
       drawer: DrawerWidget(userModel: widget.userModel,),
       body: Stack(
         children: [
@@ -126,3 +126,12 @@ class _VisitListScreenCopyState extends State<VisitListScreenCopy> {
     );
   }
 }
+
+//
+// leading: IconButton(
+// icon: Icon(Icons.arrow_back_outlined),
+// onPressed: () {
+// Navigator.of(context).pop();
+// context.read<AppProvider>().currentPage = CurrentPage.AddVisitScreen;
+// },
+// )

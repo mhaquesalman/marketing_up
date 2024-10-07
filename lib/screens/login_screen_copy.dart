@@ -72,6 +72,7 @@ class _LoginScreenCopyState extends State<LoginScreenCopy> {
     context.read<AppProvider>().setCurrentPage(CurrentPage.DashboardScreen);
     Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
+          settings: const RouteSettings(name: "dashboard"),
             builder: (context) => DashboardScreenCopy(
                   userModel: userModel,
                 )),

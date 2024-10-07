@@ -65,7 +65,7 @@ class LocationModel {
         id: id ?? this.id,
         areaName: areaName ?? this.areaName,
         companyId: companyId ?? this.companyId,
-        createdBy: createdBy ?? this.companyId,
+        createdBy: createdBy ?? this.createdBy,
         createdTime: createdTime ?? this.createdTime,
         latPosition: latPosition ?? this.latPosition,
         lonPosition: lonPosition ?? this.lonPosition,
@@ -85,7 +85,7 @@ class LocationModel {
     map[Constants.ColLocationCreatedBy] = createdBy;
     map[Constants.ColLocationCreatedTime] = createdTime.toIso8601String();
     map[Constants.ColLocationLatPosition] = latPosition;
-    map[Constants.ColLocationCreatedTime] = lonPosition;
+    map[Constants.ColLocationLonPosition] = lonPosition;
     map[Constants.ColLocationStreetAddress] = streetAddress;
     map[Constants.ColLocationOnline] = online == true ? 1 : 0;
     return map;

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:marketing_up/add_visit_screen.dart';
 import 'package:marketing_up/app_provider.dart';
 import 'package:marketing_up/firebase_provider.dart';
@@ -48,6 +49,10 @@ class MyApp extends StatelessWidget {
         title: 'Flutter Demo',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Color(int.parse("0xFFE35335"))),
+          appBarTheme: AppBarTheme(
+            titleTextStyle: TextStyle(fontFamily: GoogleFonts.caveat().fontFamily,
+                fontSize: 28, color: Colors.white)
+          ),
           useMaterial3: true,
         ),
         home: LoginScreenCopy(),

@@ -4,11 +4,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:marketing_up/app_provider.dart';
 import 'package:marketing_up/constants.dart';
 import 'package:marketing_up/drawer_widget.dart';
 import 'package:marketing_up/firebase_provider.dart';
+import 'package:marketing_up/helper/database_helper.dart';
+import 'package:marketing_up/models/location_model.dart';
 import 'package:marketing_up/screens/login_screen_copy.dart';
 import 'package:marketing_up/models/user_model.dart';
 import 'package:marketing_up/screens/add_employee_screen.dart';
@@ -32,18 +35,23 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
   late String userType;
   late String createdBy;
   late String id;
+  late String companyId;
   List<UserModel>? employees;
   Position? position;
   List<Position> listOfPositions = [];
   Placemark? placemark;
   String address = "";
-  String? loginTime;
+  String? savedLocationTime;
   late StreamSubscription<Position> streamSubscription;
   DateFormat dateFormat = DateFormat("MMM dd - yyyy, h:mm a");
+  FirebaseProvider? firebaseProvider;
+  LocationModel? locationModel;
+  int fCount = 0;
 
   Future<void> fetchData() async {
-    employees = await context.read<FirebaseProvider>().getUsersByCreatedBy(id);
-    print("employees: ${employees!.length}");
+    employees = await firebaseProvider!.getUsersByCreatedBy(id);
+    firebaseProvider!.setListOfEmployees(employees);
+    // print("employees: ${employees!.length}");
   }
 
   void trackLocation() async {
@@ -52,7 +60,7 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
     // placemark = await Utils().getAddressFromLatLon(position!.latitude, position!.longitude);
     // String address = await Utils().getPlacemarks(23.737789, 90.401332);
     address = await Utils().getPlacemarks(position!.latitude, position!.longitude);
-    initWorkmanagerToFetchLocation();
+    // initWorkmanagerToFetchLocation();
     liveLocation();
   }
 
@@ -65,35 +73,133 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
 
     streamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings)
         .listen((Position pos) {
+          fCount++;
           print("lat: ${pos.latitude}");
           print("lon: ${pos.longitude}");
+          print("fCount: $fCount");
           listOfPositions.add(pos);
-          // workWithLatestPosition(pos);
+          if (listOfPositions.length >= 1 && listOfPositions.length < 6) {
+            workWithLatestPosition();
+          }
     });
-
   }
 
-  void workWithLatestPosition(Position pos) async {
+  void workWithLatestPosition() async {
+    savedLocationTime = firebaseProvider!.getLocationSavedTimeFromSharedPref();
     bool hasConnection = await Utils.checkInternet();
     if (hasConnection) {
-      if (loginTime != null) {
-        final loginTimeWithSixHoursExtra = DateTime.parse(loginTime!).add(const Duration(hours: 6));
-        bool isTimeOver = DateTime.now().isAfter(loginTimeWithSixHoursExtra);
+      if (savedLocationTime != null) {
+        final savedTimeWithSixHoursExtra = DateTime.parse(savedLocationTime!).add(const Duration(minutes: 6));
+        bool isTimeOver = DateTime.now().isAfter(savedTimeWithSixHoursExtra);
+        // print("time over: $isTimeOver");
         if (isTimeOver) {
-          // save in remote
+          // time expired save in remote again from local
+          // delete old locations
+          // await firebaseProvider!.deleteLocation(id);
           // save last 3 data if list is big
-          final newList = listOfPositions.length > 3 ? listOfPositions.sublist(listOfPositions.length - 3) : listOfPositions;
-          newList.forEach((element) {
-
+          final latestList = listOfPositions.length > 3 ? listOfPositions.sublist(listOfPositions.length - 3) : listOfPositions;
+          final lmListWithNewPos = latestList.map((newPos) => LocationModel(
+              areaName: address,
+              companyId: companyId,
+              createdBy: id,
+              createdTime: DateTime.now(),
+              latPosition: newPos.latitude.toString(),
+              lonPosition: newPos.longitude.toString(),
+              streetAddress: address,
+              online: true
+          )).toList();
+          // fetch already saved data in local
+          bool isExist = await DatabaseHelper.dbExist();
+          List<LocationModel> savedList = isExist ? await DatabaseHelper.getInstance().getLocationList(companyId) : [];
+          final listFromDB = savedList.isNotEmpty ? savedList.length > 3 ? savedList.sublist(savedList.length - 3) : savedList : [];
+          final List<LocationModel> newList = listFromDB.isNotEmpty ? [...lmListWithNewPos, ...listFromDB] : [...lmListWithNewPos];
+          // print("newList: $newList");
+          int count = 0;
+          newList.forEach((lm) {
+            LocationModel newLocationModel = LocationModel(
+                areaName: lm.areaName,
+                companyId: lm.companyId,
+                createdBy: lm.createdBy,
+                createdTime: lm.createdTime,
+                latPosition: lm.latPosition,
+                lonPosition: lm.lonPosition,
+                streetAddress: lm.streetAddress,
+                online: true
+            );
+            firebaseProvider!.insertLocation(newLocationModel).then((savedLocation) async {
+              // print("saved loc: $savedLocation");
+              count++;
+              // print("count: $count");
+              if (savedLocation != null && count == newList.length) {
+                // save location saved time
+                firebaseProvider!.saveLocationTime(DateTime.now().toIso8601String());
+                // clear out list
+                savedList.clear();
+                latestList.clear();
+                lmListWithNewPos.clear();
+                listFromDB.clear();
+                newList.clear();
+                // delete already saved data from local
+                final r = await DatabaseHelper.getInstance().deleteAllLocation();
+                debugPrint("success in remote insertion after 6 hours");
+              }
+            });
           });
         } else {
-          // save in local
+          // 6 hours not elapsed from last saved time so save in local
+          int count = 0;
+          listOfPositions.forEach((newPos) {
+            LocationModel newLocationModel = LocationModel(
+                areaName: address,
+                companyId: companyId,
+                createdBy: id,
+                createdTime: DateTime.now(),
+                latPosition: newPos.latitude.toString(),
+                lonPosition: newPos.longitude.toString(),
+                streetAddress: address,
+                online: false
+            );
+            DatabaseHelper.getInstance().insertLocation(newLocationModel).then((savedLocation) {
+              count++;
+              if (savedLocation != -1 && count == listOfPositions.length) {
+                // clear out list after saving in local
+                listOfPositions.clear();
+                debugPrint("success in local insertion: $savedLocation");
+              }
+            });
+          });
         }
       } else {
-        // save in remote
+        // never saved before so initially save in remote
+        // save last 3 data if list is big
+        final newList = listOfPositions.length > 3 ? listOfPositions.sublist(listOfPositions.length - 3) : listOfPositions;
+        int count = 0;
+        newList.forEach((newPos) {
+          LocationModel newLocationModel = LocationModel(
+              areaName: address,
+              companyId: companyId,
+              createdBy: id,
+              createdTime: DateTime.now(),
+              latPosition: newPos.latitude.toString(),
+              lonPosition: newPos.longitude.toString(),
+              streetAddress: address,
+              online: true
+          );
+          // print("model for remote: $newLocationModel");
+          firebaseProvider!.insertLocation(newLocationModel).then((savedLocation) {
+            count++;
+            if (savedLocation != null && count == newList.length) {
+              // save location saved time
+              firebaseProvider!.saveLocationTime(DateTime.now().toIso8601String());
+              // clear out list
+              newList.clear();
+              debugPrint("Success in remote insertion for first time: ${savedLocation.id}");
+            }
+          });
+        });
       }
     } else {
-      // save in local
+      // no internet save in local
     }
   }
 
@@ -102,7 +208,7 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
         Constants.LocationFetchUniqueName,
         Constants.LocationFetchTaskName,
         frequency: const Duration(minutes: 15),
-        initialDelay: const Duration(seconds: 10),
+        initialDelay: const Duration(seconds: 5),
         inputData: {Constants.FirebaseUserId: widget.userModel!.id,
           Constants.FirebaseCompanyId: widget.userModel!.companyId}
     );
@@ -117,16 +223,20 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
 
   @override
   void initState() {
-    loginTime = context.read<FirebaseProvider>().getEmployeeLoginTimeFromSharedPref();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      firebaseProvider = context.read<FirebaseProvider>();
+      fetchData();
+    });
     userType = widget.userModel!.userType;
     createdBy = widget.userModel!.createdBy;
     id = widget.userModel!.id!;
-    // print("usermodel: ${widget.userModel}");
+    companyId = widget.userModel!.companyId;
+    print("usermodel: ${widget.userModel!.userType}");
     // ideal for calling provider from initstate
     if (userType == Constants.DefaultEmployeeType) {
       trackLocation();
     }
-    Future.microtask(() => fetchData());
+    // Future.microtask(() => fetchData());
     super.initState();
   }
 
@@ -136,17 +246,22 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
   }
   @override
   void dispose() {
-    cancelWorkmanager();
-    streamSubscription.cancel();
+    // cancelWorkmanager();
+    if (userType == Constants.DefaultEmployeeType)
+      streamSubscription.cancel();
     super.dispose();
   }
   
   @override
   Widget build(BuildContext context) {
     // String userType = context.watch<AppProvider>().userType;
-    // print("type from provider: ${userType}");
+
+    // print("status: ${context.watch<FirebaseProvider>().status}");
+
     return Scaffold(
       appBar: AppBar(
+        title: Text("Marketing Up", style: TextStyle(fontFamily: GoogleFonts.caveat().fontFamily,
+            fontSize: 28, color: Colors.white),),
         backgroundColor: Theme.of(context).primaryColor,
         iconTheme: IconThemeData(color: Colors.white),
         actions: [
@@ -155,7 +270,7 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
                 context.read<FirebaseProvider>().resetStatus();
                 context.read<FirebaseProvider>().logout(userType);
                 context.read<AppProvider>().setCurrentPage(CurrentPage.LoginScreen);
-                await Workmanager().cancelByUniqueName(Constants.LocationFetchUniqueName);
+                // await Workmanager().cancelByUniqueName(Constants.LocationFetchUniqueName);
                 Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (context) => LoginScreenCopy()),
                         (Route<dynamic> route) => false);
@@ -192,7 +307,8 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
                       else
                         return Center(child: Text("Logged in as an employee"),);
                     } else {
-                      if (employees == null) return Center(child: Text(provider.responseMsg),);
+                      if (employees == null || employees!.isEmpty && userType != Constants.DefaultUserType)
+                        return Center(child: Text("Employee Dashboard"),);
                       return ListView.builder(
                         itemCount: employees!.length,
                         itemBuilder: (ctx, index) {
@@ -229,9 +345,10 @@ class _DashboardScreenCopyState extends State<DashboardScreenCopy> {
             child: Row(
               children: [
                 CircleAvatar(
+                  backgroundColor: Theme.of(context).primaryColor,
                   radius: 60,
                   child: Padding(
-                    padding: const EdgeInsets.all(8), // Border radius
+                    padding: const EdgeInsets.all(4), // Border radius
                     child: ClipOval(child: Image.memory(base64Decode(employeeModel.userPhoto), fit: BoxFit.fill,),
                     ),
                   ),

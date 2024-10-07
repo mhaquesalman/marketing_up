@@ -18,6 +18,13 @@ class DatabaseHelper {
     return _db!;
   }
 
+  static Future<bool> dbExist() async {
+    Directory dir = await getApplicationDocumentsDirectory();
+    String path = '${dir.path}marketing_up.db';
+    bool exist = await databaseExists(path);
+    return exist;
+  }
+
   Future<Database> _initDb() async {
     Directory dir = await getApplicationDocumentsDirectory();
     String path = '${dir.path}marketing_up.db';
@@ -54,11 +61,10 @@ class DatabaseHelper {
   Future<int> insertLocation(LocationModel locationModel) async {
     Database db = await this.db;
     final int result = await db.insert(Constants.LocationTable, locationModel.toMapLocal());
-    print("insert location in db: $result");
     return result;
   }
 
-  Future<List<Map<String, dynamic>>> getLocationListMap(String companyId) async {
+  Future<List<Map<String, dynamic>>> _getLocationListMap(String companyId) async {
     Database db = await this.db;
     final List<Map<String, dynamic>> result = await db.query(
       Constants.LocationTable,
@@ -69,13 +75,19 @@ class DatabaseHelper {
   }
 
   Future<List<LocationModel>> getLocationList(String companyId) async {
-    final List<Map<String, dynamic>> locationListMap = await getLocationListMap(companyId);
+    final List<Map<String, dynamic>> locationListMap = await _getLocationListMap(companyId);
     final List<LocationModel> locationList = [];
     locationListMap.forEach((locationMap) {
       locationList.add(LocationModel.fromMapLocal(locationMap));
     });
     // visitList.sort((visitA, visitB) => visitB.date.compareTo(visitA.date));
     return locationList;
+  }
+
+  Future<int> deleteAllLocation() async {
+    Database db = await this.db;
+    int result = await db.delete(Constants.LocationTable, where: null);
+    return result;
   }
 
 }

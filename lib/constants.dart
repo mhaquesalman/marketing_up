@@ -31,6 +31,7 @@ class Constants {
   static const SharedPrefSavedEmployee = "pref_employee";
   static const SharedPrefEmployeeLoginTime = "pref_employee_login_time";
   static const SharedPrefEmployeeLoginExpired = "pref_employee_login_expired";
+  static const SharedPrefLocationSavedTime = "pref_location_saved_time";
 
   // visits collection
   static const FirebaseVisitCollection = "visits";
@@ -48,7 +49,7 @@ class Constants {
   static const FirebaseVisitDate = "visit_date";
   static const FirebaseVisitPerson = "visiting_person";
 
-  // location collection
+  // live_locations collection
   static const FirebaseLocationCollection = "live_locations";
   static const FirebaseLocationId = "id";
   static const FirebaseLocationCompanyId = "company_id";

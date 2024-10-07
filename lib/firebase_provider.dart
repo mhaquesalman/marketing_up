@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:marketing_up/constants.dart';
 import 'package:marketing_up/models/location_model.dart';
 import 'package:marketing_up/models/user_model.dart';
@@ -15,14 +16,29 @@ enum Status { Initial, Loading, Success, Fail, Error }
 
 class FirebaseProvider with ChangeNotifier {
   Status _status = Status.Initial;
-
   Status get status => _status;
 
   void resetStatus() {
     _status = Status.Initial;
+    notifyListeners();
   }
 
   String responseMsg = "";
+
+  List<UserModel> _listOfEmployees = [];
+  List<UserModel> get listOfEmployees => _listOfEmployees;
+
+  void setListOfEmployees(List<UserModel>? list) {
+    _listOfEmployees.clear();
+    _listOfEmployees.addAll(list ?? []);
+  }
+
+  UserModel? _loggedInUserModel;
+  UserModel? get loggedInUserModel => _loggedInUserModel;
+
+  void setLoggedInUserModel(UserModel userModel) {
+    _loggedInUserModel = userModel;
+  }
 
   FirebaseFirestore firebaseFirestore;
   FirebaseAuth firebaseAuth;
@@ -34,6 +50,11 @@ class FirebaseProvider with ChangeNotifier {
   String? getEmployeeFromSharedPref() => preferences.getString(Constants.SharedPrefSavedEmployee);
   String? getEmployeeLoggedInExpiredFromSharedPref() => preferences.getString(Constants.SharedPrefEmployeeLoginExpired);
   String? getEmployeeLoginTimeFromSharedPref() => preferences.getString(Constants.SharedPrefEmployeeLoginTime);
+  String? getLocationSavedTimeFromSharedPref() => preferences.getString(Constants.SharedPrefLocationSavedTime);
+
+  void saveLocationTime(String savedTime) async {
+    await preferences.setString(Constants.SharedPrefLocationSavedTime, savedTime);
+  }
 
   bool isEmployeeLoggedIn() {
     bool isLoginNotExpired = false;
@@ -45,8 +66,7 @@ class FirebaseProvider with ChangeNotifier {
     return isEmployeeSaved && isLoginNotExpired;
   }
 
-  Future<UserModel?> registerUser(UserModel userModel,
-      String plainPassword,
+  Future<UserModel?> registerUser(UserModel userModel, String plainPassword,
       {String signupFor = Constants.DefaultUserType}) async {
     _status = Status.Loading;
     notifyListeners();
@@ -115,8 +135,7 @@ class FirebaseProvider with ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> loginUser(String email,
-      String plainPassword) async {
+  Future<Map<String, dynamic>?> loginUser(String email, String plainPassword) async {
     _status = Status.Loading;
     notifyListeners();
     try {
@@ -143,6 +162,7 @@ class FirebaseProvider with ChangeNotifier {
             Map<String, dynamic> userModelWithCredential = {...mapUserModel, Constants.FirebaseToken: idToken};
             responseMsg = "Successfully logged in by admin";
             _status = Status.Success;
+            setLoggedInUserModel(userModel);
             notifyListeners();
             return userModelWithCredential;
           } else return mapUserModel;
@@ -167,6 +187,7 @@ class FirebaseProvider with ChangeNotifier {
                 Map<String, dynamic> userModelWithCredential = {...mapUserModel, Constants.FirebaseToken: ""};
                 responseMsg = "Successfully logged in by employee";
                 _status = Status.Success;
+                setLoggedInUserModel(userModel);
                 notifyListeners();
                 return userModelWithCredential;
               } else {
@@ -406,36 +427,61 @@ class FirebaseProvider with ChangeNotifier {
   }
 
   Future<LocationModel?> insertLocation(LocationModel locationModel) async {
-    _status = Status.Loading;
-    notifyListeners();
+    // _status = Status.Loading;
+    // notifyListeners();
     try {
       CollectionReference locationRef = firebaseFirestore.collection(Constants.FirebaseLocationCollection);
       // generate unique id using UniqueKey()
       String locationRefId = UniqueKey().hashCode.toString();
       LocationModel locationModelWithId = locationModel.copyWith(id: locationRefId);
       await locationRef.doc(locationRefId).set(locationModelWithId.toMap());
-      responseMsg = "New location has been added";
-      _status = Status.Success;
-      notifyListeners();
+      // responseMsg = "New location has been added";
+      // _status = Status.Success;
+      // notifyListeners();
       return locationModelWithId;
     } catch (err) {
       print("insert location err: ${err.toString()}");
-      responseMsg = "Error while creating";
-      _status = Status.Error;
-      notifyListeners();
+      // responseMsg = "Error while creating";
+      // _status = Status.Error;
+      // notifyListeners();
       return null;
     }
   }
 
+  Future<void> deleteLocation(String createdBy) async {
+    // _status = Status.Loading;
+    // notifyListeners();
+    try {
+      CollectionReference locationRef = firebaseFirestore.collection(Constants.FirebaseLocationCollection);
+      QuerySnapshot snapshots = await locationRef
+          .where(Constants.FirebaseLocationCreatedBy, isEqualTo: createdBy).get();
+      List<DocumentSnapshot> documents = snapshots.docs;
+      if (documents.isNotEmpty) {
+        documents.forEach((documentSnapshot) {
+          LocationModel locationM = LocationModel.from(documentSnapshot);
+          locationRef.doc(locationM.id).delete();
+        });
+      }
+      // responseMsg = "New location has been added";
+      // _status = Status.Success;
+      // notifyListeners();
+    } catch (err) {
+      print("delete location err: ${err.toString()}");
+      // responseMsg = "Error while creating";
+      // _status = Status.Error;
+      // notifyListeners();
+    }
+  }
+
   Future<List<LocationModel>?> fetchLocations(String userType, String companyId) async {
-    _status = Status.Loading;
-    notifyListeners();
+    // _status = Status.Loading;
+    // notifyListeners();
     try {
       CollectionReference locationRef = firebaseFirestore.collection(Constants.FirebaseLocationCollection);
       if (userType == Constants.DefaultUserType) {
         QuerySnapshot snapshots = await locationRef
             .where(Constants.FirebaseCompanyId, isEqualTo: companyId)
-            .orderBy(Constants.FirebaseVisitCreatedTime, descending: true)
+            .orderBy(Constants.FirebaseLocationCreatedTime, descending: true)
             .get();
         // print("locations snapshots: ${snapshots.docs.length}");
         List<DocumentSnapshot> documents = snapshots.docs;
@@ -445,9 +491,9 @@ class FirebaseProvider with ChangeNotifier {
             LocationModel locationModel = LocationModel.from(documentSnapshot);
             locations.add(locationModel);
           });
-          responseMsg = "locations loaded successfully";
-          _status = Status.Success;
-          notifyListeners();
+          // responseMsg = "locations loaded successfully";
+          // _status = Status.Success;
+          // notifyListeners();
           return locations;
         } else {
           responseMsg = "No locations found";
@@ -457,7 +503,54 @@ class FirebaseProvider with ChangeNotifier {
         }
       } else return null;
     } catch (err) {
-      print("fetch visits err: ${err.toString()}");
+      print("fetch locations err: ${err.toString()}");
+      // responseMsg = "Error while fetching";
+      // _status = Status.Error;
+      // notifyListeners();
+      return null;
+    }
+  }
+
+  Future<List<LocationModel>?> getLocationsByCreatedByAndCreatedTime(String createdBy, DateTime createdTime) async {
+    _status = Status.Loading;
+    notifyListeners();
+    try {
+      CollectionReference locationRef = firebaseFirestore.collection(Constants.FirebaseLocationCollection);
+      // DateFormat dateFormat = DateFormat("MMMM dd,yyyy");
+      // String queryDate = dateFormat.format(DateTime.parse(createdTime));
+      final dayAfter = createdTime.add(Duration(days: 1));
+/*      QuerySnapshot snapshots = await locationRef
+          .where(Constants.FirebaseLocationCreatedBy, isEqualTo: createdBy)
+          .orderBy(Constants.FirebaseLocationCreatedTime, descending: true)
+          .startAt([Timestamp.fromDate(createdTime)])
+          .get();*/
+
+      QuerySnapshot snapshots = await locationRef
+          .where(Constants.FirebaseLocationCreatedBy, isEqualTo: createdBy)
+          .where(Constants.FirebaseLocationCreatedTime, isGreaterThanOrEqualTo: Timestamp.fromDate(createdTime))
+          .where(Constants.FirebaseLocationCreatedTime, isLessThan: Timestamp.fromDate(dayAfter))
+          .get();
+
+      print("locations by user: ${snapshots.docs.length}");
+      List<DocumentSnapshot> documents = snapshots.docs;
+      List<LocationModel> locations = [];
+      if (documents.isNotEmpty) {
+        documents.forEach((DocumentSnapshot documentSnapshot) {
+          LocationModel locationModel = LocationModel.from(documentSnapshot);
+          locations.add(locationModel);
+        });
+        responseMsg = "locations loaded successfully";
+        _status = Status.Success;
+        notifyListeners();
+        return locations;
+      } else {
+        responseMsg = "No locations found";
+        _status = Status.Fail;
+        notifyListeners();
+        return locations;
+      }
+    } catch (err) {
+      print("fetch locations by user err: ${err.toString()}");
       responseMsg = "Error while fetching";
       _status = Status.Error;
       notifyListeners();
